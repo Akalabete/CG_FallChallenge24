@@ -24,28 +24,29 @@ class City {
         let found = false
         this.podList.forEach((pod) => {
             pod.isActive = false
-            // on cherche si il y a un pod avec le meme id que celui donné
+            // search pod with same ID
             if (pod.id === podProperties[0]) {
                 found = true;
                 isActive = true;
-                // update la liste des arrets si différents de celle enregistrée (destru et recréa de la route avec mem id de pod)
+                // update list of stops / stops number in case of recreating the pod with same id
                 if (podProperties[1] !== pod.stops || podProperties[2].split(' ') !== pod.travel) {
                     this.pod.stops = podProperties[1];
                     this.pod.travel = podProperties[2].split(' ');
                 }else {
-                    // sinon rien
                     return;
                 }
+            } else {
+                return;
             }
         });
-        // si il n'est pas present on le crée
+        // if not present we create
         if(found === false) {
             const pod = new Pod(podProperties[0], podProperties[1], podProperties[2].split(' '), true);
             this.podList.push(pod);
         }else {
             return;
         }
-        // et on mets a jour la liste des pods actif ( en cas de pod detruit non remplacés)
+        // update active pod list
         this.podlist = this.podList.filter(pod => pod.isActive === true)
     }       
 
@@ -136,9 +137,8 @@ class Pod {
         travel = travel.split(' ');
         this.isActive = isActive
     }
-    
-
 }
+
 class TravelRoute {
     constructor(length, building1, building2, capacity) {
         this.length = length;
