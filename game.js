@@ -9,8 +9,8 @@ class City {
     constructor() {
         this.ressource= 0;
         this.buildings = [];
-        this.travelRoutes = []
-        this.pods = []
+        this.travelRoutes = [];,
+        this.podList = []
     }
     updateNewTradeRoute(building1, building2, capacity) {
         this.travelRoutes.find(travelRoute => travelRoute.building1 === building1 && travelRoute.building2 === building2 && travelRotue.capacity === capacity)
@@ -20,9 +20,35 @@ class City {
     updateRessource(ressource) {
         this.ressource = ressource;
     }
-    updatePod(pod) {
-        this.pods.find(pod => pod.id === pod.id) ? null : this.pods.push(pod);
-    }
+    updatePodList(podProperties) {
+        let found = false
+        this.podList.forEach((pod) => {
+            pod.isActive = false
+            // on cherche si il y a un pod avec le meme id que celui donné
+            if (pod.id === podProperties[0]) {
+                found = true;
+                isActive = true;
+                // update la liste des arrets si différents de celle enregistrée (destru et recréa de la route avec mem id de pod)
+                if (podProperties[1] !== pod.stops || podProperties[2].split(' ') !== pod.travel) {
+                    this.pod.stops = podProperties[1];
+                    this.pod.travel = podProperties[2].split(' ');
+                }else {
+                    // sinon rien
+                    return;
+                }
+            }
+        });
+        // si il n'est pas present on le crée
+        if(found === false) {
+            const pod = new Pod(podProperties[0], podProperties[1], podProperties[2].split(' '), true);
+            this.podList.push(pod);
+        }else {
+            return;
+        }
+        // et on mets a jour la liste des pods actif ( en cas de pod detruit non remplacés)
+        this.podlist = this.podList.filter(pod => pod.isActive === true)
+    }       
+
     updateNewBuildings(numNewBuildings, buildingProperties) {
         for (let i = 0; i < numNewBuildings; i++) {
             let BPArray = buildingProperties.split(' ');
@@ -84,14 +110,14 @@ class City {
 }
 
 class Building {
-    constructor(id, type, level, x, y) {
+    constructor(id, level, x, y, hasTR, hasTP, isDesserved) {
         this.id = id;
         this.level = level;
         this.x = x;
         this.y = y;
-        this.hasTR = false;
-        this.hasTP = false;
-        this.isDesserved = false;
+        this.hasTR = hasTR;
+        this.hasTP = hasTP;
+        this.isDesserved = isDesserved;
     }
 }
 class LandingArea {
@@ -99,20 +125,35 @@ class LandingArea {
         this.id = id;
         this.x = x;
         this.y = y;
-        this.monthlyArrivals = 0;
-        this.arrivingType = []
+        this.monthlyArrivals = monthlyArrivals;
+        this.arrivingType = arrivalType
     }
 }
-
-class TravelRoute {
-    constructor(id, building1, building2, capacity) {
+class Pod {
+    constructor(id, stops, travel) {
         this.id = id;
+        this.stops = stops;
+        travel = travel.split(' ');
+        this.isActive = isActive
+    }
+    
+
+}
+class TravelRoute {
+    constructor(length, building1, building2, capacity) {
+        this.length = length;
         this.building1 = building1;
         this.building2 = building2;
         this.capacity = capacity;
-        this.hasPod = false;
+        this.hasTraffic = false;
     }
-    
+    updateHasTraffic(pod) {
+        PPArray = pod.travel
+        if (PPArray.find(pod => pod.building1 === this.building1 && pod.building2 === this.building2)){
+            this.hasTraffic = true;
+        }
+    }
+
 }
 
 const city = new City();
@@ -127,9 +168,12 @@ while (true) {
         const capacity = parseInt(inputs[2]);
     }
     const numPods = parseInt(readline());
+    
     for (let i = 0; i < numPods; i++) {
         const podProperties = readline();
+        updatePodList(podProperties);
     }
+    
     const numNewBuildings = parseInt(readline());
     for (let i = 0; i < numNewBuildings; i++) {
         const buildingProperties = readline();
