@@ -7,17 +7,36 @@
 // game loop
 class City {
     constructor() {
-        this.ressource= 0;
+        this.ressources= 0;
         this.buildings = [];
         this.travelRoutes = [];
         this.podList = []
     }
-    updateNewTradeRoute(building1, building2, capacity) {
-        this.travelRoutes.find(travelRoute => travelRoute.building1 === building1 && travelRoute.building2 === building2 && travelRotue.capacity === capacity)
-         ? null : this.travelRoutes.push(new TravelRoute(calculateLength(building1ID, building2ID), building1, building2, capacity));
+    updateNewTradeRoute(building1ID, building2ID, capacity) {
+        const existingRoute = this.travelRoutes.find(travelRoute => 
+            travelRoute.building1 === building1ID && 
+            travelRoute.building2 === building2ID && 
+            travelRoute.capacity === capacity
+        );
+    
+        if (!existingRoute) {
+            const newRoute = new TravelRoute(calculateLength(building1ID, building2ID), building1ID, building2ID, capacity);
+            this.travelRoutes.push(newRoute);
+    
+            // update hasTR of buildings
+            if (this.buildings[building1ID]) {
+                this.buildings[building1ID].hasTR++;
+            }
+            if (this.buildings[building2ID]) {
+                this.buildings[building2ID].hasTR++;
+            } else {
+                return;
+            }
+        }
+        
     }
-    updateRessource(ressource) {
-        this.ressource = ressource;
+    updateRessources(ressources) {
+        this.ressources = ressources;
     }
     updatePodList(podProperties) {
         let found = false
@@ -89,11 +108,12 @@ class City {
                     // create and push the object in the buildings array
                     const landingArea = new LandingArea(
                         BPArray[1],
+                        "landing area",
                         BPArray[2],
                         BPArray[3],
                         BPArray[4],
                         [astroType1, astroType2, astroType3, astroType4, astroType5, astroType6],
-                        false,
+                        0,
                         false,
                     );
                     this.buildings.push(landingArea);
@@ -104,10 +124,11 @@ class City {
             }else {
                 const building= new Building(
                     BPArray[1],
+                    "lunar module",
                     BPArray[0],
                     BPArray[2],
                     BPArray[3],
-                    false,
+                    0,
                     false,
                     false,
                 );
@@ -127,10 +148,32 @@ function pointOnSegment(A, B, C) {
     epsilon = 0.0000001
     return (-epsilon < distance(B, A) + distance(A, C) - distance(B, C) < epsilon)
 }
+// function that find the closests buildings from 1 and give an array
+function findClosestBuildingIds(buildingA) {
+    const distances = city.buildings.map((building) => {
+        const distance = Math.sqrt(Math.pow(buildingA.x - building.x, 2) + Math.pow(buildingA.y - building.y, 2));
+        return { id: building.id, distance: distance };
+    });
+
+    distances.sort((a, b) => a.distance - b.distance);
+
+    return distances.map((building) => building.id);
+}
+// fn that filters the building without connection
+function buildingFiltering() {
+    // checking if building are linked
+    toLinkBuildings = buildings.filter(buildings => buildings.hasTR === 0 && buildings.hasTP === false)
+    // list of unlinked landing areas
+    unlinkedLA = toLinkBuildings.find(building => building.type === 'landing area')
+    // list of unlinked lunar modules
+    unlinkedLM = toLinkBuildings.find(building => building.type === 'lunar module')
+    return toLinkBuildings, unlinkedLA, unlinkedLM;
+}
 // describe lunar module building model
 class Building {
-    constructor(id, level, x, y, hasTR, hasTP, isDesserved) {
+    constructor(id, type, level, x, y, hasTR, hasTP, isDesserved) {
         this.id = id;
+        this.type = type
         this.level = level;
         this.x = x;
         this.y = y;
@@ -141,8 +184,9 @@ class Building {
 }
 // describe landing area building model
 class LandingArea {
-    constructor(id, x, y, monthlyArrivals, arrivingType, hasTR, isDesserved) {
+    constructor(id,type, x, y, monthlyArrivals, arrivingType, hasTR, isDesserved) {
         this.id = id;
+        this.type = type;
         this.x = x;
         this.y = y;
         this.monthlyArrivals = monthlyArrivals;
@@ -181,34 +225,59 @@ class TravelRoute {
 const city = new City();
 
 while (true) {
+    // turn counter
+    let monthsOnMoon = 0;
     const resources = parseInt(readline());
-    city.updateRessource(resources);
+    city.updateRessources(resources);
     const numTravelRoutes = parseInt(readline());
     for (let i = 0; i < numTravelRoutes; i++) {
         var inputs = readline().split(' ');
         const buildingId1 = parseInt(inputs[0]);
         const buildingId2 = parseInt(inputs[1]);
         const capacity = parseInt(inputs[2]);
-        updateTradeRoute(buildingId1, buildingId2, capacity);
+        city.updateNewTradeRoute(buildingId1, buildingId2, capacity);
     }
     const numPods = parseInt(readline());
     
     for (let i = 0; i < numPods; i++) {
         const podProperties = readline();
-        updatePodList(podProperties);
+        city.updatePodList(podProperties);
     }
     
     const numNewBuildings = parseInt(readline());
     for (let i = 0; i < numNewBuildings; i++) {
         const buildingProperties = readline();
-        updateNewBuildings(numNewBuildings, buildingProperties);
+        city.updateNewBuildings(numNewBuildings, buildingProperties);
     }
     let action = 'WAIT';
     // Write an action using console.log()
     // To debug: console.error('Debug messages...');
     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
-    // checking if building have a trade route
-    buildings.filter(buildings => buildings.hasTR === false)
+    // PRIORITY 1 : LINK BUILDINGS
+    buildingFiltering();
+    while(toLinkBuildings.length > 0 && city.ressources > 500){
+        action = "";
+        if(unlinkedLA) {
+            closestNodes = findClosestBuildingId(unlinkedLA)
+            const tolerance = 0.01;
+            const referenceDistance = closestNodes[0].distance;
+            const filteredNodes = closestNodes.filter((node) => {
+                return Math.abs(node.distance - referenceDistance) <= tolerance;
+            });
+            filteredNodes.forEach((node) => {
+                if (city.ressources > 500){
+                    action += `TUBE ${unlinkedLA.id} ${node.id};`;
+                    city.buildings[unlinkedLA.id].hasTR++;
+                    city.buildings[node.id].hasTR++;
+                    city.ressources -= 500;
+                }else {
+                    return;
+                }
+            });
+        }
+    }
+    // PRIORITY II :  Pods
+    
     // spend vs save ressources
     // is there a pod need ?
     // is there a pod to upgrade ?
@@ -217,4 +286,5 @@ while (true) {
     
     
     console.log(action);
+    monthsOnMoon++;
 }
