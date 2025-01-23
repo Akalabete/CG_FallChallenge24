@@ -9,13 +9,17 @@ class City {
     constructor() {
         this.ressource= 0;
         this.buildings = [];
-        this.travelRoutes = [];,
+        this.travelRoutes = [];
         this.podList = []
     }
     updateNewTradeRoute(building1, building2, capacity) {
         this.travelRoutes.find(travelRoute => travelRoute.building1 === building1 && travelRoute.building2 === building2 && travelRotue.capacity === capacity)
-         ? null : this.travelRoutes.push(new TravelRoute(this.travelRoutes.length, building1, building2, capacity));
-
+         ? null : this.travelRoutes.push(new TravelRoute(calculateLength(building1ID, building2ID), building1, building2, capacity));
+    }
+    calculateLength(building1ID, building2ID) {
+        const building1 = this.buildings.find(building => building.id === building1ID);
+        const building2 = this.buildings.find(building => building.id === building2ID);
+        return Math.sqrt(Math.pow(building1.x - building2.x, 2) + Math.pow(building1.y - building2.y, 2));
     }
     updateRessource(ressource) {
         this.ressource = ressource;
@@ -49,10 +53,11 @@ class City {
         // update active pod list
         this.podlist = this.podList.filter(pod => pod.isActive === true)
     }       
-
     updateNewBuildings(numNewBuildings, buildingProperties) {
         for (let i = 0; i < numNewBuildings; i++) {
+            // extract properties
             let BPArray = buildingProperties.split(' ');
+            // verify if it is a landing area or a building
             if (BPArray[0] === 0) {
                 if(BPArray[4] > 0){
                     let astroType1 = 0;
@@ -61,6 +66,7 @@ class City {
                     let astroType4 = 0;
                     let astroType5 = 0;
                     let astroType6 = 0;
+                    // create and populate an array of astronauts types
                     for(let j = 5; j<BPArray.length; j++) {
                         switch (BPArray[j]) {
                             case 1:
@@ -85,6 +91,7 @@ class City {
                                 break;
                         }
                     }
+                    // create and push the object in the buildings array
                     const landingArea = new LandingArea(
                         BPArray[1],
                         BPArray[2],
@@ -95,6 +102,7 @@ class City {
                 } else {
                     return;
                 }
+                // create and push the lunar module object in the buildings array
             }else {
                 const building= new Building(
                     BPArray[1],
@@ -105,11 +113,12 @@ class City {
                     false,
                     false
                 );
+                this.buildings.push(building);
             }
         }
     }
 }
-
+// describe lunar module building model
 class Building {
     constructor(id, level, x, y, hasTR, hasTP, isDesserved) {
         this.id = id;
@@ -121,6 +130,7 @@ class Building {
         this.isDesserved = isDesserved;
     }
 }
+// describe landing area building model
 class LandingArea {
     constructor(id, x, y, monthlyArrivals, arrivingType) {
         this.id = id;
@@ -130,6 +140,7 @@ class LandingArea {
         this.arrivingType = arrivalType
     }
 }
+// describe pod model
 class Pod {
     constructor(id, stops, travel) {
         this.id = id;
@@ -138,7 +149,7 @@ class Pod {
         this.isActive = isActive
     }
 }
-
+// describe travel route model
 class TravelRoute {
     constructor(length, building1, building2, capacity) {
         this.length = length;
