@@ -162,7 +162,7 @@ function findClosestBuildingIds(buildingA) {
 // fn that filters the building without connection
 function buildingFiltering() {
     // checking if building are linked
-    toLinkBuildings = buildings.filter(buildings => buildings.hasTR === 0 && buildings.hasTP === false)
+    toLinkBuildings = city.buildings.filter(buildings => buildings.hasTR === 0 && buildings.hasTP === false)
     // list of unlinked landing areas
     unlinkedLA = toLinkBuildings.find(building => building.type === 'landing area')
     // list of unlinked lunar modules
