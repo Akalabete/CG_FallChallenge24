@@ -92,7 +92,10 @@ class City {
                         BPArray[2],
                         BPArray[3],
                         BPArray[4],
-                        [astroType1, astroType2, astroType3, astroType4, astroType5, astroType6]);
+                        [astroType1, astroType2, astroType3, astroType4, astroType5, astroType6],
+                        false,
+                        false,
+                    );
                     this.buildings.push(landingArea);
                 } else {
                     return;
@@ -106,18 +109,23 @@ class City {
                     BPArray[3],
                     false,
                     false,
-                    false
+                    false,
                 );
                 this.buildings.push(building);
             }
         }
     }
 }
-// calculate the length of the travel route
+// fn that calculate the length of the travel route
 function calculateLength(building1ID, building2ID) {
     const building1 = this.buildings.find(building => building.id === building1ID);
     const building2 = this.buildings.find(building => building.id === building2ID);
     return Math.sqrt(Math.pow(building1.x - building2.x, 2) + Math.pow(building1.y - building2.y, 2));
+}
+// fn that verify if some points are aligned
+function pointOnSegment(A, B, C) {
+    epsilon = 0.0000001
+    return (-epsilon < distance(B, A) + distance(A, C) - distance(B, C) < epsilon)
 }
 // describe lunar module building model
 class Building {
@@ -133,12 +141,14 @@ class Building {
 }
 // describe landing area building model
 class LandingArea {
-    constructor(id, x, y, monthlyArrivals, arrivingType) {
+    constructor(id, x, y, monthlyArrivals, arrivingType, hasTR, isDesserved) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.monthlyArrivals = monthlyArrivals;
         this.arrivingType = arrivingType
+        this.hasTR = hasTR;
+        this.isDesserved = isDesserved;
     }
 }
 // describe pod model
@@ -193,10 +203,18 @@ while (true) {
         const buildingProperties = readline();
         updateNewBuildings(numNewBuildings, buildingProperties);
     }
-
+    let action = 'WAIT';
     // Write an action using console.log()
     // To debug: console.error('Debug messages...');
-
-    console.log('TUBE 0 1;TUBE 0 2;POD 42 0 1 0 2 0 1 0 2');     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
-
+    // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
+    // checking if building have a trade route
+    buildings.filter(buildings => buildings.hasTR === false)
+    // spend vs save ressources
+    // is there a pod need ?
+    // is there a pod to upgrade ?
+    // is there a teleporter need ?
+    
+    
+    
+    console.log(action);
 }
