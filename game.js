@@ -16,11 +16,6 @@ class City {
         this.travelRoutes.find(travelRoute => travelRoute.building1 === building1 && travelRoute.building2 === building2 && travelRotue.capacity === capacity)
          ? null : this.travelRoutes.push(new TravelRoute(calculateLength(building1ID, building2ID), building1, building2, capacity));
     }
-    calculateLength(building1ID, building2ID) {
-        const building1 = this.buildings.find(building => building.id === building1ID);
-        const building2 = this.buildings.find(building => building.id === building2ID);
-        return Math.sqrt(Math.pow(building1.x - building2.x, 2) + Math.pow(building1.y - building2.y, 2));
-    }
     updateRessource(ressource) {
         this.ressource = ressource;
     }
@@ -117,6 +112,12 @@ class City {
             }
         }
     }
+}
+// calculate the length of the travel route
+function calculateLength(building1ID, building2ID) {
+    const building1 = this.buildings.find(building => building.id === building1ID);
+    const building2 = this.buildings.find(building => building.id === building2ID);
+    return Math.sqrt(Math.pow(building1.x - building2.x, 2) + Math.pow(building1.y - building2.y, 2));
 }
 // describe lunar module building model
 class Building {
