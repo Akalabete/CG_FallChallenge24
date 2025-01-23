@@ -138,7 +138,7 @@ class LandingArea {
         this.x = x;
         this.y = y;
         this.monthlyArrivals = monthlyArrivals;
-        this.arrivingType = arrivalType
+        this.arrivingType = arrivingType
     }
 }
 // describe pod model
@@ -172,12 +172,14 @@ const city = new City();
 
 while (true) {
     const resources = parseInt(readline());
+    city.updateRessource(resources);
     const numTravelRoutes = parseInt(readline());
     for (let i = 0; i < numTravelRoutes; i++) {
         var inputs = readline().split(' ');
         const buildingId1 = parseInt(inputs[0]);
         const buildingId2 = parseInt(inputs[1]);
         const capacity = parseInt(inputs[2]);
+        updateTradeRoute(buildingId1, buildingId2, capacity);
     }
     const numPods = parseInt(readline());
     
@@ -189,6 +191,7 @@ while (true) {
     const numNewBuildings = parseInt(readline());
     for (let i = 0; i < numNewBuildings; i++) {
         const buildingProperties = readline();
+        updateNewBuildings(numNewBuildings, buildingProperties);
     }
 
     // Write an action using console.log()
