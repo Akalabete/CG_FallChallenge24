@@ -13,28 +13,37 @@ class City {
         this.podList = []
     }
     updateNewTradeRoute(building1ID, building2ID, capacity) {
+        if (!this.travelRoutes) {
+            this.travelRoutes = [];
+        }
+
         const existingRoute = this.travelRoutes.find(travelRoute => 
-            travelRoute.building1 === building1ID && 
-            travelRoute.building2 === building2ID && 
+            travelRoute.building1 === String(building1ID) && 
+            travelRoute.building2 === String(building2ID) && 
             travelRoute.capacity === capacity
         );
-    
+
         if (!existingRoute) {
-            const newRoute = new TravelRoute(calculateLength(building1ID, building2ID), building1ID, building2ID, capacity);
+            const newRoute = new TravelRoute(calculateLength(this, String(building1ID), String(building2ID)), String(building1ID), String(building2ID), capacity);
             this.travelRoutes.push(newRoute);
-    
-            // update hasTR of buildings
-            if (this.buildings[building1ID]) {
-                this.buildings[building1ID].hasTR++;
-            }
-            if (this.buildings[building2ID]) {
-                this.buildings[building2ID].hasTR++;
+
+            const building1 = this.buildings.find(building => building.id === String(building1ID));
+            const building2 = this.buildings.find(building => building.id === String(building2ID));
+
+            if (building1) {
+                building1.hasTR++;
             } else {
-                return;
+                console.error(`Building with ID ${building1ID} not found.`);
+            }
+
+            if (building2) {
+                building2.hasTR++;
+            } else {
+                console.error(`Building with ID ${building2ID} not found.`);
             }
         }
-        
     }
+
     updateRessources(ressources) {
         this.ressources = ressources;
     }
@@ -137,10 +146,21 @@ class City {
 }
 
 // fn that calculate the length of the travel route
-function calculateLength(building1ID, building2ID) {
-    const building1 = this.buildings.find(building => building.id === building1ID);
-    const building2 = this.buildings.find(building => building.id === building2ID);
-    return Math.sqrt(Math.pow(building1.x - building2.x, 2) + Math.pow(building1.y - building2.y, 2));
+function calculateLength(city, building1ID, building2ID) {
+    const building1 = city.buildings.find(building => building.id === String(building1ID));
+    const building2 = city.buildings.find(building => building.id === String(building2ID));
+
+    if (!building1 || !building2) {
+        console.error(`Building not found: ${!building1 ? building1ID : ''} ${!building2 ? building2ID : ''}`);
+        return 0; // ou une autre valeur par défaut appropriée
+    }
+
+    const x1 = parseFloat(building1.x);
+    const y1 = parseFloat(building1.y);
+    const x2 = parseFloat(building2.x);
+    const y2 = parseFloat(building2.y);
+
+    return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 // fn that verify if some points are aligned
 function pointOnSegment(A, B, C) {
@@ -154,7 +174,11 @@ function findClosestBuildingIds(buildingA) {
 
     // calculate distance for buildings
     const distances = cityBuildingListMinusA.map((building) => {
-        const distance = Math.sqrt(Math.pow(buildingA.x - building.x, 2) + Math.pow(buildingA.y - building.y, 2));
+        const xA = parseFloat(buildingA.x);
+        const yA = parseFloat(buildingA.y);
+        const xB = parseFloat(building.x);
+        const yB = parseFloat(building.y);
+        const distance = Math.sqrt(Math.pow(xA - xB, 2) + Math.pow(yA - yB, 2));
         return { id: building.id, distance: distance };
     });
 
@@ -223,7 +247,6 @@ class TravelRoute {
             this.hasTraffic = true;
         }
     }
-
 }
 
 const city = new City();
