@@ -260,8 +260,7 @@ class Pod {
     constructor(id, stops, travel) {
         this.id = id;
         this.stops = stops;
-        travel = travel.split(' ');
-        this.isActive = isActive
+        this.travel = travel
     }
 }
 // describe travel route model
@@ -282,7 +281,7 @@ class TravelRoute {
         }
     }
 }
-
+let podID = 0
 const city = new City();
 const createdRoutes = new Set();
 
@@ -372,12 +371,30 @@ while (true) {
     }
     
     // PRIORITY II :  Pods
+    // listing undesserved by a pod nodes
+    tradeRoutesList = city.travelRoutes;
+    tradeRoutesList.forEach((tradeRoute) => {
+        if (tradeRoute.hasTraffic === false && ressources > 1000) {
+            if(action === 'WAIT'){
+                action = '';
+            }
+            const building1 = city.findBuildingById(tradeRoute.building1);
+            const building2 = city.findBuildingById(tradeRoute.building2);
+            if (building1.isDesserved === false || building2.isDesserved === false) {
+                podID++
+                action += `POD ${podID} ${tradeRoute.building1} ${tradeRoute.building2} ${tradeRoute.building1};`;
+                tradeRoute.hasTraffic = true;
+                building1.isDesserved = true;
+                building2.isDesserved = true;
+            }
+        }
+    });
+
     
     // spend vs save ressources
     // is there a pod need ?
     // is there a pod to upgrade ?
     // is there a teleporter need ?
-    console.error(city.travelRoutes)
     console.log(action);
     monthsOnMoon++;
 }
