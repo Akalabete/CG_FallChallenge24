@@ -43,7 +43,6 @@ class City {
             }
         }
     }
-
     updateRessources(ressources) {
         this.ressources = ressources;
     }
@@ -170,7 +169,7 @@ function pointOnSegment(A, B, C) {
 // fn that find the closests buildings from 1 and give an array
 function findClosestBuildingIds(buildingA) {
     // filter buildingA from the list
-    const cityBuildingListMinusA = city.buildings.filter(building => building.id !== buildingA.id);
+    const cityBuildingListMinusA = city.buildings.filter(building => building.id !== buildingA.id && building.hasTR <= 4);
 
     // calculate distance for buildings
     const distances = cityBuildingListMinusA.map((building) => {
@@ -196,6 +195,18 @@ function buildingFiltering() {
     // list of unlinked lunar modules
     const unlinkedLM = city.buildings.find(building => building.type === 'lunar module' && building.hasTR === 0);
     return {unlinkedLA, unlinkedLM };
+}
+// fn that take 2  segment and verify its not crossing one other
+function segmentsIntersect(segment1, segment2) {
+    const [x1, y1, x2, y2] = segment1;
+    const [x3, y3, x4, y4] = segment2;
+
+    function ccw(A, B, C) {
+        return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0]);
+    }
+
+    return (ccw([x1, y1], [x3, y3], [x4, y4]) !== ccw([x2, y2], [x3, y3], [x4, y4])) &&
+           (ccw([x1, y1], [x2, y2], [x3, y3]) !== ccw([x1, y1], [x2, y2], [x4, y4]));
 }
 // describe lunar module building model
 class Building {
@@ -236,6 +247,7 @@ class Pod {
 class TravelRoute {
     constructor(length, building1, building2, capacity) {
         this.length = length;
+        this.segment = [parseFloat(building1.x), parseFloat(building1.y), parseFloat(building2.x), parseFloat(building2.y)];
         this.building1 = building1;
         this.building2 = building2;
         this.capacity = capacity;
@@ -281,9 +293,12 @@ while (true) {
     // To debug: console.error('Debug messages...');
     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
     // PRIORITY 1 : LINK BUILDINGS
-   
+
+    // state of ressources hardcoded true for now
+    const ressources = city.ressources ;
+
     const { unlinkedLA, unlinkedLM } = buildingFiltering();  
-    if (unlinkedLA && city.ressources > 500) {
+    if (unlinkedLA) {
         action = "";
         const closestNodes = findClosestBuildingIds(unlinkedLA);
         console.error(closestNodes);
@@ -292,12 +307,23 @@ while (true) {
         const filteredNodes = closestNodes.filter((node) => {
             return Math.abs(node.distance - referenceDistance) <= tolerance;
         });
+        console.error(filteredNodes);
         filteredNodes.forEach((node) => {
-            if (city.ressources > 500){
+            const newSegment = [parseFloat(unlinkedLA.x), parseFloat(unlinkedLA.y), parseFloat(node.x), parseFloat(node.y)];
+            const segmentsIntersect = city.travelRoutes.some((travelRoute) => {
+                return segmentsIntersect(travelRoute.segment, newSegment);
+            });
+            // calculate the cost of the tube
+            const costPerKm = 0.1;
+            const thisTubeCost = node.distance * costPerKm;
+            constructionPossible = ((ressources -  thisTubeCost) >= 0) ? true : false;
+            if ( constructionPossible && !segmentsIntersect) {
+               
+                // verification if the tube wont cross another tuber
                 action += `TUBE ${unlinkedLA.id} ${node.id};`;
                 city.buildings[unlinkedLA.id].hasTR++;
                 city.buildings[node.id].hasTR++;
-                city.ressources -= 500;
+                city.ressources -= thisTubeCost;
             } else {
                 return;
             }
