@@ -304,7 +304,7 @@ while (true) {
     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
     // PRIORITY 1 : LINK BUILDINGS
 
-    // state of ressources hardcoded true for now
+    // state of ressources 
     let ressources = city.ressources;
     let canBuild = true;
 
@@ -321,37 +321,31 @@ while (true) {
             const filteredNodes = closestNodes.filter((node) => {
                 return Math.abs(node.distance - referenceDistance) <= tolerance;
             });
-
             filteredNodes.forEach((node) => {
                 const newSegment = [parseFloat(building.x), parseFloat(building.y), parseFloat(node.x), parseFloat(node.y)];
                 const segmentsIntersectFlag = city.travelRoutes.some((travelRoute) => {
                     return segmentsIntersect(travelRoute.segment, newSegment);
                 });
-
-                // Vérifiez si une route existe déjà
+                // Vérify if route exists
                 const routeKey1 = `${building.id}-${node.id}`;
                 const routeKey2 = `${node.id}-${building.id}`;
                 const routeExists = createdRoutes.has(routeKey1) || createdRoutes.has(routeKey2);
-
                 // calculate the cost of the tube
                 const costPerKm = 0.1;
                 const thisTubeCost = node.distance * costPerKm;
                 const constructionPossible = ((ressources - thisTubeCost) >= 0);
-
                 if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
-                    // verification if the tube won't cross another tube
+                    // verify if the tube won't cross another tube
                     action += `TUBE ${building.id} ${node.id};`;
                     building.hasTR = parseInt(building.hasTR) + 1;
                     const targetBuilding = city.findBuildingById(node.id);
                     targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
                     ressources -= thisTubeCost;
-
-                    // Ajouter la route à l'ensemble des routes créées
+                    // add the route to the created routes
                     createdRoutes.add(routeKey1);
                     createdRoutes.add(routeKey2);
-
                     console.error(city.buildings);
-                    // Mise à jour de la liste des bâtiments non connectés après les connexions des zones d'atterrissage
+                    // update the unlinked buildings list
                     ({ unlinkedLA, unlinkedLM } = buildingFiltering());
                     unlinkedBuildings = [...unlinkedLA, ...unlinkedLM]; // Mise à jour de la fusion des deux tableaux
                 } else if (!constructionPossible) {
