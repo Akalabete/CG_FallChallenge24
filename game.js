@@ -7,11 +7,15 @@
 // game loop
 class City {
     constructor() {
-        this.ressources= 0;
-        this.buildings = [];
+        this.ressources = 0;
+        this.buildings = {
+            landingAreas: [],
+            lunarModules: []
+        };
         this.travelRoutes = [];
-        this.podList = []
+        this.podList = [];
     }
+
     updateNewTradeRoute(building1ID, building2ID, capacity) {
         if (!this.travelRoutes) {
             this.travelRoutes = [];
@@ -27,8 +31,8 @@ class City {
             const newRoute = new TravelRoute(calculateLength(this, String(building1ID), String(building2ID)), String(building1ID), String(building2ID), capacity);
             this.travelRoutes.push(newRoute);
 
-            const building1 = this.buildings.find(building => building.id === String(building1ID));
-            const building2 = this.buildings.find(building => building.id === String(building2ID));
+            const building1 = this.findBuildingById(building1ID);
+            const building2 = this.findBuildingById(building2ID);
 
             if (building1) {
                 building1.hasTR++;
@@ -43,22 +47,29 @@ class City {
             }
         }
     }
+
+    findBuildingById(buildingID) {
+        return this.buildings.landingAreas.find(building => building.id === String(buildingID)) ||
+               this.buildings.lunarModules.find(building => building.id === String(buildingID));
+    }
+
     updateRessources(ressources) {
         this.ressources = ressources;
     }
+
     updatePodList(podProperties) {
-        let found = false
+        let found = false;
         this.podList.forEach((pod) => {
-            pod.isActive = false
+            pod.isActive = false;
             // search pod with same ID
             if (pod.id === podProperties[0]) {
                 found = true;
-                isActive = true;
+                pod.isActive = true;
                 // update list of stops / stops number in case of recreating the pod with same id
                 if (podProperties[1] !== pod.stops || podProperties[2].split(' ') !== pod.travel) {
-                    this.pod.stops = podProperties[1];
-                    this.pod.travel = podProperties[2].split(' ');
-                }else {
+                    pod.stops = podProperties[1];
+                    pod.travel = podProperties[2].split(' ');
+                } else {
                     return;
                 }
             } else {
@@ -66,21 +77,22 @@ class City {
             }
         });
         // if not present we create
-        if(found === false) {
+        if (!found) {
             const pod = new Pod(podProperties[0], podProperties[1], podProperties[2].split(' '), true);
             this.podList.push(pod);
-        }else {
+        } else {
             return;
         }
         // update active pod list
-        this.podlist = this.podList.filter(pod => pod.isActive === true)
-    }       
+        this.podList = this.podList.filter(pod => pod.isActive === true);
+    }
+
     updateNewBuildings(buildingProperties) {
         // extract properties
-        let BPArray = buildingProperties.split(' ')
+        let BPArray = buildingProperties.split(' ');
         // verify if it is a landing area or a building
         if (BPArray[0] === '0') {
-            if(BPArray[4] > 0){
+            if (BPArray[4] > 0) {
                 let astroType1 = 0;
                 let astroType2 = 0;
                 let astroType3 = 0;
@@ -88,24 +100,24 @@ class City {
                 let astroType5 = 0;
                 let astroType6 = 0;
                 // create and populate an array of astronauts types
-                for(let j = 5; j<BPArray.length; j++) {
+                for (let j = 5; j < BPArray.length; j++) {
                     switch (BPArray[j]) {
-                        case 1:
+                        case '1':
                             astroType1++;
                             break;
-                        case 2:
+                        case '2':
                             astroType2++;
                             break;
-                        case 3:
+                        case '3':
                             astroType3++;
                             break;
-                        case 4:
+                        case '4':
                             astroType4++;
                             break;
-                        case 5:
+                        case '5':
                             astroType5++;
                             break;
-                        case 6:
+                        case '6':
                             astroType6++;
                             break;
                         default:
@@ -123,13 +135,13 @@ class City {
                     0,
                     false,
                 );
-                this.buildings.push(landingArea);
+                this.buildings.landingAreas.push(landingArea);
             } else {
                 return;
             }
             // create and push the lunar module object in the buildings array
-        }else {
-            const building= new Building(
+        } else {
+            const building = new Building(
                 BPArray[1],
                 "lunar module",
                 BPArray[0],
@@ -139,15 +151,15 @@ class City {
                 false,
                 false,
             );
-            this.buildings.push(building);
+            this.buildings.lunarModules.push(building);
         }
     }
 }
 
 // fn that calculate the length of the travel route
 function calculateLength(city, building1ID, building2ID) {
-    const building1 = city.buildings.find(building => building.id === String(building1ID));
-    const building2 = city.buildings.find(building => building.id === String(building2ID));
+    const building1 = city.findBuildingById(building1ID);
+    const building2 = city.findBuildingById(building2ID);
 
     if (!building1 || !building2) {
         console.error(`Building not found: ${!building1 ? building1ID : ''} ${!building2 ? building2ID : ''}`);
@@ -161,15 +173,11 @@ function calculateLength(city, building1ID, building2ID) {
 
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
-// fn that verify if some points are aligned
-function pointOnSegment(A, B, C) {
-    epsilon = 0.0000001
-    return (-epsilon < distance(B, A) + distance(A, C) - distance(B, C) < epsilon)
-}
-// fn that find the closests buildings from 1 and give an array
+
+// fn that find the closest buildings from 1 and give an array
 function findClosestBuildingIds(buildingA) {
     // filter buildingA from the list
-    const cityBuildingListMinusA = city.buildings.filter(building => building.id !== buildingA.id && building.hasTR <= 4);
+    const cityBuildingListMinusA = [...city.buildings.landingAreas, ...city.buildings.lunarModules].filter(building => building.id !== buildingA.id && building.hasTR <= 4);
 
     // calculate distance for buildings
     const distances = cityBuildingListMinusA.map((building) => {
@@ -187,14 +195,15 @@ function findClosestBuildingIds(buildingA) {
     // return id & distance in an array
     return distances;
 }
+
 // fn that filters the building without connection
 function buildingFiltering() {
     // checking if buildings are linked
     // list of unlinked landing areas
-    const unlinkedLA = city.buildings.find(building => building.type === 'landing area' && building.monthlyArrivals > 0 && building.hasTR === 0);
+    const unlinkedLA = city.buildings.landingAreas.filter(building => building.monthlyArrivals > 0 && building.hasTR === 0);
     // list of unlinked lunar modules
-    const unlinkedLM = city.buildings.find(building => building.type === 'lunar module' && building.hasTR === 0);
-    return {unlinkedLA, unlinkedLM };
+    const unlinkedLM = city.buildings.lunarModules.filter(building => building.hasTR === 0);
+    return { unlinkedLA, unlinkedLM };
 }
 // fn that take 2  segment and verify its not crossing one other
 function segmentsIntersect(segment1, segment2) {
@@ -262,6 +271,7 @@ class TravelRoute {
 }
 
 const city = new City();
+const createdRoutes = new Set();
 
 while (true) {
     // turn counter
@@ -270,7 +280,7 @@ while (true) {
     city.updateRessources(resources);
     const numTravelRoutes = parseInt(readline());
     for (let i = 0; i < numTravelRoutes; i++) {
-        var inputs = readline().split(' ');
+        const inputs = readline().split(' ');
         const buildingId1 = parseInt(inputs[0]);
         const buildingId2 = parseInt(inputs[1]);
         const capacity = parseInt(inputs[2]);
@@ -295,42 +305,64 @@ while (true) {
     // PRIORITY 1 : LINK BUILDINGS
 
     // state of ressources hardcoded true for now
-    const ressources = city.ressources ;
+    let ressources = city.ressources;
+    let canBuild = true;
 
-    const { unlinkedLA, unlinkedLM } = buildingFiltering();  
-    if (unlinkedLA) {
-        action = "";
-        const closestNodes = findClosestBuildingIds(unlinkedLA);
-        console.error(closestNodes);
-        const tolerance = 0.01;
-        const referenceDistance = closestNodes[0].distance;
-        const filteredNodes = closestNodes.filter((node) => {
-            return Math.abs(node.distance - referenceDistance) <= tolerance;
-        });
-        console.error(filteredNodes);
-        filteredNodes.forEach((node) => {
-            const newSegment = [parseFloat(unlinkedLA.x), parseFloat(unlinkedLA.y), parseFloat(node.x), parseFloat(node.y)];
-            const segmentsIntersect = city.travelRoutes.some((travelRoute) => {
-                return segmentsIntersect(travelRoute.segment, newSegment);
+    // while loop while we have fund and unlinked buildings
+    let { unlinkedLA, unlinkedLM } = buildingFiltering();
+    let unlinkedBuildings = [...unlinkedLA, ...unlinkedLM]; // Fusion des deux tableaux
+
+    while (canBuild && unlinkedBuildings.length > 0) {
+        action = '';
+        unlinkedBuildings.forEach((building) => {
+            const closestNodes = findClosestBuildingIds(building);
+            const tolerance = 0.01;
+            const referenceDistance = closestNodes[0].distance;
+            const filteredNodes = closestNodes.filter((node) => {
+                return Math.abs(node.distance - referenceDistance) <= tolerance;
             });
-            // calculate the cost of the tube
-            const costPerKm = 0.1;
-            const thisTubeCost = node.distance * costPerKm;
-            constructionPossible = ((ressources -  thisTubeCost) >= 0) ? true : false;
-            if ( constructionPossible && !segmentsIntersect) {
-               
-                // verification if the tube wont cross another tuber
-                action += `TUBE ${unlinkedLA.id} ${node.id};`;
-                city.buildings[unlinkedLA.id].hasTR++;
-                city.buildings[node.id].hasTR++;
-                city.ressources -= thisTubeCost;
-            } else {
-                return;
-            }
+
+            filteredNodes.forEach((node) => {
+                const newSegment = [parseFloat(building.x), parseFloat(building.y), parseFloat(node.x), parseFloat(node.y)];
+                const segmentsIntersectFlag = city.travelRoutes.some((travelRoute) => {
+                    return segmentsIntersect(travelRoute.segment, newSegment);
+                });
+
+                // Vérifiez si une route existe déjà
+                const routeKey1 = `${building.id}-${node.id}`;
+                const routeKey2 = `${node.id}-${building.id}`;
+                const routeExists = createdRoutes.has(routeKey1) || createdRoutes.has(routeKey2);
+
+                // calculate the cost of the tube
+                const costPerKm = 0.1;
+                const thisTubeCost = node.distance * costPerKm;
+                const constructionPossible = ((ressources - thisTubeCost) >= 0);
+
+                if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
+                    // verification if the tube won't cross another tube
+                    action += `TUBE ${building.id} ${node.id};`;
+                    building.hasTR = parseInt(building.hasTR) + 1;
+                    const targetBuilding = city.findBuildingById(node.id);
+                    targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
+                    ressources -= thisTubeCost;
+
+                    // Ajouter la route à l'ensemble des routes créées
+                    createdRoutes.add(routeKey1);
+                    createdRoutes.add(routeKey2);
+
+                    console.error(city.buildings);
+                    // Mise à jour de la liste des bâtiments non connectés après les connexions des zones d'atterrissage
+                    ({ unlinkedLA, unlinkedLM } = buildingFiltering());
+                    unlinkedBuildings = [...unlinkedLA, ...unlinkedLM]; // Mise à jour de la fusion des deux tableaux
+                } else if (!constructionPossible) {
+                    // fund lacking, we stop the loop
+                    canBuild = false;
+                } else {
+                    return;
+                }
+            });
         });
     }
-        
-    
     
     // PRIORITY II :  Pods
     
@@ -338,8 +370,6 @@ while (true) {
     // is there a pod need ?
     // is there a pod to upgrade ?
     // is there a teleporter need ?
-    
-    
     
     console.log(action);
     monthsOnMoon++;
