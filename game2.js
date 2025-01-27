@@ -94,6 +94,39 @@ class City {
         }
                                         
     }
+    updatePodList(podProperties) {
+        let found = false;
+        this.podList.forEach((pod) => {
+            pod.isActive = false;
+            // search pod with same ID
+            if (pod.id === podProperties[0]) {
+                found = true;
+                pod.isActive = true;
+                // update list of stops / stops number in case of recreating the pod with same id
+                if (podProperties[1] !== pod.stops || podProperties[2].split(' ') !== pod.travel) {
+                    pod.stops = podProperties[1];
+                    pod.travel = podProperties[2].split(' ');
+                } else {
+                    return;
+                }
+            } else {
+                return;
+            }
+        });
+        // if not present we create
+        if (!found) {
+            const pod = new Pod(podProperties[0], podProperties[1], podProperties[2].split(' '), true);
+            this.podList.push(pod);
+        } else {
+            return;
+        }
+        // update active pod list
+        this.podList = this.podList.filter(pod => pod.isActive === true);
+    }
+    destroyPodByID(podId) {
+        action += `DESTROY ${podID}`
+        this.podList = this.podList.filter(pod => podList.id!== podId )
+    }
     
 }
 
@@ -184,22 +217,22 @@ function tubeConstruction( building1, building2) {
     const routeKey2 = `${building2.id}-${building1.id}`;
     const routeExists = createdRoutes.has(routeKey1) || createdRoutes.has(routeKey2);
     // calculate the cost of the tube
-    const costPerKm = 0.1;
-    const thisTubeCost = node.distance * costPerKm;
-    const constructionPossible = ((ressources - thisTubeCost) >= 0);
+    const distance = calculateLength(city, building1, building2)
+    // verify if nough funds
+    const constructionPossible = (resource - calculateTubeCost( distance, 1)> 0 ) ? true : false;
+    
     if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
-    // create the tube
-    action += `TUBE ${building.id} ${node.id};`;
-    building.hasTR = parseInt(building.hasTR) + 1;
-    const targetBuilding = city.findBuildingById(node.id);
-    targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
-    ressources -= thisTubeCost;
-    // Add the routes to the set
-    createdRoutes.add(routeKey1);
-    createdRoutes.add(routeKey2);
-    // updt unlinked buildings list
-    ({ unlinkedLA, unlinkedLM } = buildingFiltering());
-    unlinkedBuildings = [...unlinkedLA, ...unlinkedLM];
+    // create the tube 
+        action += `TUBE ${building.id} ${node.id};`;
+        building.hasTR = parseInt(building.hasTR) + 1;
+        const targetBuilding = city.findBuildingById(node.id);
+        targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
+        ressources -= thisTubeCost;
+        // Add the routes to the set
+        createdRoutes.add(routeKey1);
+        createdRoutes.add(routeKey2);
+    }else {
+        return;
     }
 }
 let city = new City()
