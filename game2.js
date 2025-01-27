@@ -168,6 +168,8 @@ const createdRoute = new Set()
 
 
 while (true) {
+    let action = '';
+    
     const resources = parseInt(readline());
     city.updateResources(resources)
     const numTravelRoutes = parseInt(readline());
@@ -188,10 +190,43 @@ while (true) {
         const buildingProperties = readline();
         city.updateBuildingsLists(buildingProperties)
     }
+    // seek unlinked LA and try to link them to their building type sorted by links and nodes chain links
+    let unlinkedLA = city.landingAreas.filter(building => building.hasTr === 0)
+    if (unlinkedLA.length >0) {
+        unlinkedLA.forEach((LA) => {
+            // extract arrival type and check if there are any, per types
+            for (let i = 0; i < LA.arrivalByType.length; i++){
+                if(LA.arrivalByType[i] > 0) {
+                    // index = 0 => type 1
+                    const type = LA.arrivalByType[i]+1
+                    // get an array of building of the same type
+                    let LMArray = findBuildingByType(type)
+                    // a link should be created on those without existing links prior
+                    if(LMArray.length > 0){
+                        let priorityLM = LMArray.filter(building => building.hasTr = 0)
+                       
+                        if(priorityLM){
+                            canBuild = estimateCost(LA, priorityLM) 
+                            if(canBuild){
+                                constructTube(LA,priorityLM);
 
+                            }else {
+                                return
+                            }
+                        }else {
+                            // tbd , take the closest linked to this building type and if can construct tube, if not take the next closest
+                            return;
+                        } 
+                    }
+                }
+            }
+        })
+    } 
     // Write an action using console.log()
     // To debug: console.error('Debug messages...');
-
-    console.log('TUBE 0 1;TUBE 0 2;POD 42 0 1 0 2 0 1 0 2');     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
+    if (action === ''){
+        action === 'WAIT'
+    }
+    console.log(actions);     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
 
 }
