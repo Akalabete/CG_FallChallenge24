@@ -323,6 +323,54 @@ while (true) {
     // while loop while we have fund and unlinked buildings
     let { unlinkedLA, unlinkedLM } = buildingFiltering();
     let unlinkedBuildings = [...unlinkedLA, ...unlinkedLM]; // Fusion des deux tableaux
+    // fn that find the closest building of same type than LA arrivals, take a LA return LM Array
+    function findBuildingOfSameType(LA) {
+        const LMArrayOfSameType = city.buildings.lunarModules.filter((building) => {
+            return building.level === LA.arrivingType;
+        });
+        return LMArrayOfSameType;
+    }
+    // create a priority rule for unlinked Buildings to be linked
+    function priorityRule(unlinkedBuildings) {
+        unlinkedBuildings.forEach((building) => {
+            if (building.type === "Landing Area"){
+                foundBuildingOfSameType = findBuildingOfSameType(building);
+                
+                
+            }
+        })
+    }
+        
+    // fn that create a tube between 2 buildings
+    function tubeConstruction( building1, building2) {
+        const newSegment = [parseFloat(building1.x), parseFloat(building1.y), parseFloat(building2.x), parseFloat(building2.y)];
+                const segmentsIntersectFlag = city.travelRoutes.some((travelRoute) => {
+                    return segmentsIntersect(travelRoute.segment, newSegment);
+                });
+        // verify if route exists
+        const routeKey1 = `${building1.id}-${building2.id}`;
+        const routeKey2 = `${building2.id}-${building1.id}`;
+        const routeExists = createdRoutes.has(routeKey1) || createdRoutes.has(routeKey2);
+        // calculate the cost of the tube
+        const costPerKm = 0.1;
+        const thisTubeCost = node.distance * costPerKm;
+        const constructionPossible = ((ressources - thisTubeCost) >= 0);
+        if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
+        // create the tube
+        action += `TUBE ${building.id} ${node.id};`;
+        building.hasTR = parseInt(building.hasTR) + 1;
+        const targetBuilding = city.findBuildingById(node.id);
+        targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
+        ressources -= thisTubeCost;
+        // Add the routes to the set
+        createdRoutes.add(routeKey1);
+        createdRoutes.add(routeKey2);
+        // updt unlinked buildings list
+        ({ unlinkedLA, unlinkedLM } = buildingFiltering());
+        unlinkedBuildings = [...unlinkedLA, ...unlinkedLM];
+        }
+    }
+
 
     while (canBuild && unlinkedBuildings.length > 0) {
         action = ''
@@ -333,11 +381,13 @@ while (true) {
             const filteredNodes = closestNodes.filter((node) => {
                 return Math.abs(node.distance - referenceDistance) <= tolerance;
             });
+            // 
             filteredNodes.forEach((node) => {
                 const newSegment = [parseFloat(building.x), parseFloat(building.y), parseFloat(node.x), parseFloat(node.y)];
                 const segmentsIntersectFlag = city.travelRoutes.some((travelRoute) => {
                     return segmentsIntersect(travelRoute.segment, newSegment);
                 });
+
                 // Vérifiez si une route existe déjà
                 const routeKey1 = `${building.id}-${node.id}`;
                 const routeKey2 = `${node.id}-${building.id}`;
@@ -348,7 +398,7 @@ while (true) {
                 const constructionPossible = ((ressources - thisTubeCost) >= 0);
 
                 if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
-                    // verification if the tube won't cross another tube
+                    // create the tube
                     action += `TUBE ${building.id} ${node.id};`;
                     building.hasTR = parseInt(building.hasTR) + 1;
                     const targetBuilding = city.findBuildingById(node.id);
