@@ -158,14 +158,54 @@ function calculateLength(city, building1ID, building2ID) {
 }
 
     // fn that calcultate the cost of a tube
-    function calculateTubeCost(distance, capacity) {
-        return distance * capacity * 0.1
+function calculateTubeCost(distance, capacity) {
+    return distance * capacity * 0.1
+}
+    // fn that take 2  segment and verify its not crossing one other
+function segmentsIntersect(segment1, segment2) {
+    const [x1, y1, x2, y2] = segment1;
+    const [x3, y3, x4, y4] = segment2;
+
+    function ccw(A, B, C) {
+        return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0]);
     }
 
+    return (ccw([x1, y1], [x3, y3], [x4, y4]) !== ccw([x2, y2], [x3, y3], [x4, y4])) &&
+           (ccw([x1, y1], [x2, y2], [x3, y3]) !== ccw([x1, y1], [x2, y2], [x4, y4]));
+}
+    // fn that create a tube 
+function tubeConstruction( building1, building2) {
+    const newSegment = [parseFloat(building1.x), parseFloat(building1.y), parseFloat(building2.x), parseFloat(building2.y)];
+            const segmentsIntersectFlag = city.travelRoutes.some((travelRoute) => {
+                return segmentsIntersect(travelRoute.segment, newSegment);
+            });
+    // verify if route exists
+    const routeKey1 = `${building1.id}-${building2.id}`;
+    const routeKey2 = `${building2.id}-${building1.id}`;
+    const routeExists = createdRoutes.has(routeKey1) || createdRoutes.has(routeKey2);
+    // calculate the cost of the tube
+    const costPerKm = 0.1;
+    const thisTubeCost = node.distance * costPerKm;
+    const constructionPossible = ((ressources - thisTubeCost) >= 0);
+    if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
+    // create the tube
+    action += `TUBE ${building.id} ${node.id};`;
+    building.hasTR = parseInt(building.hasTR) + 1;
+    const targetBuilding = city.findBuildingById(node.id);
+    targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
+    ressources -= thisTubeCost;
+    // Add the routes to the set
+    createdRoutes.add(routeKey1);
+    createdRoutes.add(routeKey2);
+    // updt unlinked buildings list
+    ({ unlinkedLA, unlinkedLM } = buildingFiltering());
+    unlinkedBuildings = [...unlinkedLA, ...unlinkedLM];
+    }
+}
 let city = new City()
 const createdRoute = new Set()
 
-
+let podAmount = 0;
 
 while (true) {
     let action = '';
@@ -204,21 +244,39 @@ while (true) {
                     // a link should be created on those without existing links prior
                     if(LMArray.length > 0){
                         let priorityLM = LMArray.filter(building => building.hasTr = 0)
-                       
-                        if(priorityLM){
-                            canBuild = estimateCost(LA, priorityLM) 
+                        let haveModuleToConnect = findClosestModule(LA.id).filter(building => building.hasTR <= 4)
+                        if(priorityLM.length > 0){
+                            let canBuild = estimateCost(LA.id, priorityLM[0].id) 
                             if(canBuild){
-                                constructTube(LA,priorityLM);
-
+                                constructTube(LA.id, priorityLM[0].id);
+                                city.updateNewTube(LA.id, priorityLM[0].id, 1);
                             }else {
                                 return
                             }
-                        }else {
-                            // tbd , take the closest linked to this building type and if can construct tube, if not take the next closest
+                        // if no unlinked LM of same type, seek closest node of same type
+                        }else if (!priorityLM && haveModuleToConnect.length>0) {
+                            let canBuild = estimateCost(LA.id, haveModuleToConnect[0].id);
+                            if(canBuild){
+                                constructTube(LA.id, haveModuleToConnect[0].id);
+                                city.updateNewTube(LA.id, haveModuleToConnect[0].id, 1);
+                            } else {
+                                return;
+                            }
+                        } else {
                             return;
-                        } 
+                        }
+                    }else {
+                        return;
                     }
+                }else {
+                    return;
                 }
+            };
+            // control if this unlinked LA found a 
+            if(LA.hasTR === 0){
+                findClosestBuildingWithFreeLinks()
+                // case1 this module is LA add the arrivaltype to his object
+                // case2 this module is a LM , need to check if this module can be poded to a proper building type or if need to create a tube
             }
         })
     } 
