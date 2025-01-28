@@ -76,9 +76,6 @@ class City {
                         typeCounts[type - 1]++;
                     }
                 });
-            
-
-            
             const landingArea = new LandingArea(
                                                  idSeq[1],
                                                  idSeq[2],
@@ -93,7 +90,7 @@ class City {
         } else {
             const lunarModule = new LunarModule(
                                                 idSeq[1],
-                                                idSeq[0],
+                                                parseInt(idSeq[0]),
                                                 idSeq[2],
                                                 idSeq[3],
                                                 0,
@@ -152,9 +149,9 @@ class LandingArea {
     }
 }
 class LunarModule {
-    constructor(id, type, level, x, y, hasTR, hasTP, isDesserved) {
+    constructor(id, type, x, y, hasTR, hasTP, isDesserved) {
         this.id = id;
-        this.level = level;
+        this.type = type;
         this.x = x;
         this.y = y;
         this.hasTR = hasTR;
@@ -219,8 +216,8 @@ function segmentsIntersect(segment1, segment2) {
     // fn that create a tube 
 function tubeConstruction( building1, building2) {
     const newSegment = [parseFloat(building1.x), parseFloat(building1.y), parseFloat(building2.x), parseFloat(building2.y)];
-            const segmentsIntersectFlag = city.travelRoutes.some((travelRoute) => {
-                return segmentsIntersect(travelRoute.segment, newSegment);
+            const segmentsIntersectFlag = city.tubeList.some((tube) => {
+                return segmentsIntersect(tube.segment, newSegment);
             });
     // verify if route exists
     const routeKey1 = `${building1.id}-${building2.id}`;
@@ -309,27 +306,38 @@ while (true) {
             for (let i = 0; i < LA.arrivingType.length; i++){
                 if(LA.arrivingType[i] > 0) {
                     // index = 0 => type 1
-                    const type = LA.arrivingType[i]+1
+                    const type = i + 1;
                     // get an array of building of the same type
                     let LMArray = findBuildingByType(city, type)
                     // a link should be created on those without existing links prior
                     if(LMArray.length > 0){
-                        let priorityLM = LMArray.filter(building => building.hasTr = 0)
-                        let haveModuleToConnect = findClosestModule(LA.id).filter(building => building.hasTR <= 4)
+                        let priorityLM = LMArray.filter(building => building.hasTR === 0)
+                        let haveModuleToConnect = LMArray.filter(building => building.hasTR >1 && building.hasTR <5)
                         if(priorityLM.length > 0){
-                            let canBuild = estimateCost(LA.id, priorityLM[0].id) 
+                            let canBuild = (resources - calculateTubeCost(LA.id, priorityLM[0].id)) > 0 ? true: false;
                             if(canBuild){
-                                constructTube(LA.id, priorityLM[0].id);
+                                tubeConstruction(LA.id, priorityLM[0].id);
                                 city.updateNewTube(LA.id, priorityLM[0].id, 1);
                             }else {
                                 return
                             }
                         // if no unlinked LM of same type, seek closest node of same type
                         }else if (!priorityLM && haveModuleToConnect.length>0) {
-                            let canBuild = estimateCost(LA.id, haveModuleToConnect[0].id);
+                            // we get the closest module of this type with free links
+                            const distances = haveModuleToConnect.map((building) => {
+                                const distance = calculateLength(LA.id, building.id);
+                                return { building, distance };
+                                });
+                    
+                            const closestBuilding = distances.reduce((closest, current) => {
+                                return current.distance < closest.distance ? current : closest;
+                                });
+                    
+                        
+                            let canBuild = (resources - calculateTubeCost(LA.id, closestBuilding.id)) > 0 ? true: false;
                             if(canBuild){
-                                constructTube(LA.id, haveModuleToConnect[0].id);
-                                city.updateNewTube(LA.id, haveModuleToConnect[0].id, 1);
+                                tubeConstruction(LA.id, closestBuilding.id);
+                                city.updateNewTube(LA.id, closestBuilding.id, 1);
                             } else {
                                 return;
                             }
@@ -346,7 +354,7 @@ while (true) {
             // control if this unlinked LA found a 
             if(LA.hasTR === 0){
                 let availNode = findClosestBuildingWithFreeLinks(city, LA.id)
-                let canBuild = estimateCost(LA.id, availNode.id)
+                let canBuild = (resources - calculateTubeCost(LA.id, availNode.id)) > 0 ? true: false;
                 if(canBuild){
                     constructTube(LA.id, availNode.id);
                     city.updateNewTube(LA.id, availNode.id);
