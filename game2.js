@@ -75,7 +75,7 @@ class City {
                                                  idSeq[3],
                                                  idSeq[4],
                                                  arrivalByType,
-                                                 false,
+                                                 0,
                                                  false
                                                 );
 
@@ -86,7 +86,7 @@ class City {
                                                 idSeq[0],
                                                 idSeq[2],
                                                 idSeq[3],
-                                                false,
+                                                0,
                                                 false,
                                                 false
                                                 )
