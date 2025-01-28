@@ -269,13 +269,22 @@ function findBuildingByType(city, type){
     let answer = city.lunarModules.filter(building => building.type === type);
     return answer;
 }
-let city = new City()
-const createdRoutes = new Set()
+    // fn that return a global array of undesserved module or landing area
+function findUndesservedModules(city) {
+    let areNotDesservedLA = city.landingAreas.filter(building => building.isDesserved === false );
+    let areNotDesservedLM = city.lunarModules.filter(building => building.isDesserved === false );
+    let areNotDesserved = [...areNotDesservedLA, ...areNotDesservedLM]
+    return areNotDesserved;
+}
+
+let city = new City();
+const createdRoutes = new Set();
 let podAmount = 0;
+let turnAmount = 0;
 
 while (true) {
+    turnAmount += 1;
     let action = '';
-    
     const resources = parseInt(readline());
     city.updateResources(resources)
     const numTravelRoutes = parseInt(readline());
@@ -289,7 +298,10 @@ while (true) {
     }
     const numPods = parseInt(readline());
     for (let i = 0; i < numPods; i++) {
-        const podProperties = readline();
+        const podProperties = readline().split(' ');
+        const podId  = podProperties[0];
+        const podStops = podProperties[1]
+        const podTravel = podProperties.slice(2)
     }
     const numNewBuildings = parseInt(readline());
     for (let i = 0; i < numNewBuildings; i++) {
@@ -349,7 +361,7 @@ while (true) {
                     return;
                 }
             };
-            // control if this unlinked LA found a 
+            // control if this unlinked LA found no module of his type to connect
             if(LA.hasTR === 0){
                 let availNode = findClosestBuildingWithFreeLinks(city, LA.id)
                 if (availNode){
@@ -370,6 +382,84 @@ while (true) {
             }
         })
     }
+    // step II creating pods
+    // create a list of undesserved buildings
+    
+    
+    //if (hasUndesserved.length > 0){
+        
+        // check what segments can be cumulated
+        
+        // check money for pod building
+      //  let canAffordPod = (city.resources - 500) > 0 ? true : false;
+
+        // compar
+        // regroup per type
+        // check if they have a tube 
+            // and if that tube is connected to the proper type
+            // if it does create a pod with id of the buildingdesserveds the number of stops is the amount total of incomers /10 * number of building desserved
+                // update the podList
+                // update the building objects 
+            // if not seek the way to connect to closest tube that has the correct stops
+        // at a point need to check if the routes need to be upgraded & a pod duplicated
+        // need to compare the upgrade + new pod cost vs interest of incomes.
+    //}
+    // Fonction pour vérifier si une route dessert tous les bâtiments non desservis
+function canCreateRouteForUndesserved(city, undesservedBuildings) {
+    let tubes = city.tubeList;
+    let undesservedIds = undesservedBuildings.map(building => building.id);
+
+    // Vérifier si chaque bâtiment non desservi est connecté par un tube
+    for (let i = 0; i < undesservedIds.length; i++) {
+        let buildingId = undesservedIds[i];
+        let isConnected = tubes.some(tube => tube.building1 === buildingId || tube.building2 === buildingId);
+        if (!isConnected) {
+            return false;
+        }
+    }
+    return true;
+}
+// Fonction pour générer les arrêts du pod
+function generatePodStops(chain) {
+    let stops = [];
+    for (let i = 0; i < chain.length - 1; i++) {
+        stops.push(chain[i]);
+        stops.push(chain[i + 1]);
+        stops.push(chain[i]);
+    }
+    stops.push(chain[chain.length - 1]);
+    return stops;
+}
+// Fonction pour créer un pod
+function createPod(city, undesservedBuildings, action) {
+    let podId = city.podList.length + 1;
+    let stops = generatePodStops(undesservedBuildings.map(building => building.id));
+    let travel = stops.join(' ');
+
+    action += `POD ${podId} ${travel};`;
+
+    // Mettre à jour les bâtiments desservis
+    undesservedBuildings.forEach(building => {
+        building.isDesserved = true;
+    });
+
+    // Ajouter le pod à la liste des pods
+    city.podList.push(new Pod(podId, stops, travel.split(' ')));
+
+    return action;
+}
+
+// Exemple d'utilisation dans votre code
+let hasUndesserved = findUndesservedModules(city);
+
+if (hasUndesserved.length > 0) {
+    let canAffordPod = (city.resources - 500) > 0 ? true : false;
+
+    if (canAffordPod && canCreateRouteForUndesserved(city, hasUndesserved)) {
+        action = createPod(city, hasUndesserved, action);
+        city.resources -= 500; // Coût de création d'un pod
+    }
+}
     if(action === ""){
         action = "WAIT"
     }
@@ -377,5 +467,5 @@ while (true) {
     // To debug: console.error('Debug messages...');
     
     console.log(action);     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
-
+    
 }
