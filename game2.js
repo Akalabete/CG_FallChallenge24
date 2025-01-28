@@ -409,7 +409,7 @@ function canCreateRouteForUndesserved(city, undesservedBuildings) {
     let tubes = city.tubeList;
     let undesservedIds = undesservedBuildings.map(building => building.id);
 
-    // Vérifier si chaque bâtiment non desservi est connecté par un tube
+    // verify weither undeserved building have a tube or not
     for (let i = 0; i < undesservedIds.length; i++) {
         let buildingId = undesservedIds[i];
         let isConnected = tubes.some(tube => tube.building1 === buildingId || tube.building2 === buildingId);
@@ -419,7 +419,7 @@ function canCreateRouteForUndesserved(city, undesservedBuildings) {
     }
     return true;
 }
-// Fonction pour générer les arrêts du pod
+// fn that generate pod stops
 function generatePodStops(chain) {
     let stops = [];
     for (let i = 0; i < chain.length - 1; i++) {
@@ -430,7 +430,7 @@ function generatePodStops(chain) {
     stops.push(chain[chain.length - 1]);
     return stops;
 }
-// Fonction pour créer un pod
+// fn that create  a pod
 function createPod(city, undesservedBuildings, action) {
     let podId = city.podList.length + 1;
     let stops = generatePodStops(undesservedBuildings.map(building => building.id));
@@ -438,18 +438,18 @@ function createPod(city, undesservedBuildings, action) {
 
     action += `POD ${podId} ${travel};`;
 
-    // Mettre à jour les bâtiments desservis
+    // updt desserved building list
     undesservedBuildings.forEach(building => {
         building.isDesserved = true;
     });
 
-    // Ajouter le pod à la liste des pods
+    // add pod to list
     city.podList.push(new Pod(podId, stops, travel.split(' ')));
 
     return action;
 }
 
-// Exemple d'utilisation dans votre code
+// try to push a pod in 
 let hasUndesserved = findUndesservedModules(city);
 
 if (hasUndesserved.length > 0) {
@@ -457,7 +457,7 @@ if (hasUndesserved.length > 0) {
 
     if (canAffordPod && canCreateRouteForUndesserved(city, hasUndesserved)) {
         action = createPod(city, hasUndesserved, action);
-        city.resources -= 500; // Coût de création d'un pod
+        city.resources -= 500; // cost of a pod
     }
 }
     if(action === ""){
