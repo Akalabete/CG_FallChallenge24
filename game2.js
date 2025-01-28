@@ -332,7 +332,7 @@ while (true) {
                                 return current.distance < closest.distance ? current : closest;
                                 });
                             let buildingCost = calculateTubeCost(LA.id, closestBuilding.id)
-                            if((resources-buildingCost)>0){
+                            if((city.resources-buildinCost) > 0){
                                 action = tubeConstruction(LA.id, closestBuilding.id, action);
                                 city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, closestBuilding.id, 1);
@@ -352,11 +352,19 @@ while (true) {
             // control if this unlinked LA found a 
             if(LA.hasTR === 0){
                 let availNode = findClosestBuildingWithFreeLinks(city, LA.id)
-                let canBuild = (resources - calculateTubeCost(LA.id, availNode.id)) > 0 ? true: false;
-                if(canBuild){
-                    constructTube(LA.id, availNode.id);
-                    city.updateNewTube(LA.id, availNode.id);
+                if (availNode){
+                    let buildingCost = calculateTubeCost(LA.id, availNode.id, action);
+                    if((city.resources-buildingCost) > 0){
+                        action= constructTube(LA.id, availNode.id, action);
+                        city.resources = city.resources-buildingCost
+                        city.updateNewTube(LA.id, availNode.id, 1);
+                    }else {
+                        return;
+                    }   
+                }else {
+                    return;
                 }
+                
                 // case1 this module is LA add the arrivaltype to his object
                 // case2 this module is a LM , need to check if this module can be poded to a proper building type or if need to create a tube
             }
