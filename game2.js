@@ -214,32 +214,31 @@ function segmentsIntersect(segment1, segment2) {
            (ccw([x1, y1], [x2, y2], [x3, y3]) !== ccw([x1, y1], [x2, y2], [x4, y4]));
 }
     // fn that create a tube 
-function tubeConstruction( building1, building2) {
-    const newSegment = [parseFloat(building1.x), parseFloat(building1.y), parseFloat(building2.x), parseFloat(building2.y)];
+function tubeConstruction( building1, building2, action) {
+    const startBuilding = city.findBuildingById(building1);
+    const targetBuilding = city.findBuildingById(building2);
+    const newSegment = [parseFloat(startBuilding.x), parseFloat(startBuilding.y), parseFloat(targetBuilding.x), parseFloat(targetBuilding.y)];
             const segmentsIntersectFlag = city.tubeList.some((tube) => {
                 return segmentsIntersect(tube.segment, newSegment);
             });
     // verify if route exists
-    const routeKey1 = `${building1.id}-${building2.id}`;
-    const routeKey2 = `${building2.id}-${building1.id}`;
+    const routeKey1 = `${building1}-${building2}`;
+    const routeKey2 = `${building2}-${building1}`;
     const routeExists = createdRoutes.has(routeKey1) || createdRoutes.has(routeKey2);
     // calculate the cost of the tube
-    const distance = calculateLength(city, building1, building2)
-    // verify if nough funds
-    const constructionPossible = (resource - calculateTubeCost( distance, 1)> 0 ) ? true : false;
-    
-    if (constructionPossible && !segmentsIntersectFlag && !routeExists) {
+
+    if (!segmentsIntersectFlag && !routeExists) {
     // create the tube 
-        action += `TUBE ${building.id} ${node.id};`;
-        building.hasTR = parseInt(building.hasTR) + 1;
-        const targetBuilding = city.findBuildingById(node.id);
-        targetBuilding.hasTR = parseInt(targetBuilding.hasTR) + 1;
-        ressources -= thisTubeCost;
+        action += `TUBE ${building1} ${building2};`
+        startBuilding.hasTR += 1;
+        targetBuilding.hasTR = targetBuilding.hasTR + 1;
+       
         // Add the routes to the set
         createdRoutes.add(routeKey1);
         createdRoutes.add(routeKey2);
+        return action;
     }else {
-        return;
+        return action;
     }
 }
   //  fn that filter closest building with free TR
@@ -271,8 +270,7 @@ function findBuildingByType(city, type){
     return answer;
 }
 let city = new City()
-const createdRoute = new Set()
-
+const createdRoutes = new Set()
 let podAmount = 0;
 
 while (true) {
@@ -314,9 +312,10 @@ while (true) {
                         let priorityLM = LMArray.filter(building => building.hasTR === 0)
                         let haveModuleToConnect = LMArray.filter(building => building.hasTR >1 && building.hasTR <5)
                         if(priorityLM.length > 0){
-                            let canBuild = (resources - calculateTubeCost(LA.id, priorityLM[0].id)) > 0 ? true: false;
-                            if(canBuild){
-                                tubeConstruction(LA.id, priorityLM[0].id);
+                            buildingCost = calculateTubeCost(LA.id, priorityLM[0].id);
+                            if((resources-buildingCost)>0){
+                                action = tubeConstruction(LA.id, priorityLM[0].id, action);
+                                city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, priorityLM[0].id, 1);
                             }else {
                                 return
@@ -332,11 +331,10 @@ while (true) {
                             const closestBuilding = distances.reduce((closest, current) => {
                                 return current.distance < closest.distance ? current : closest;
                                 });
-                    
-                        
-                            let canBuild = (resources - calculateTubeCost(LA.id, closestBuilding.id)) > 0 ? true: false;
-                            if(canBuild){
-                                tubeConstruction(LA.id, closestBuilding.id);
+                            let buildingCost = calculateTubeCost(LA.id, closestBuilding.id)
+                            if((resources-buildingCost)>0){
+                                action = tubeConstruction(LA.id, closestBuilding.id, action);
+                                city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, closestBuilding.id, 1);
                             } else {
                                 return;
@@ -363,12 +361,13 @@ while (true) {
                 // case2 this module is a LM , need to check if this module can be poded to a proper building type or if need to create a tube
             }
         })
-    } 
+    }
+    if(action === ""){
+        action = "WAIT"
+    }
     // Write an action using console.log()
     // To debug: console.error('Debug messages...');
-    if (action === ''){
-        action === 'WAIT'
-    }
+    
     console.log(action);     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
 
 }
