@@ -235,6 +235,29 @@ function tubeConstruction( building1, building2) {
         return;
     }
 }
+  // fn that filter closest building with free TR
+  //  building and id it would also check if that building is linked to a
+  //  prper building type
+function findClosestBuildingWithFreeLinks(city, buildingID) {
+    let filteredNodesLA = city.landingAreas.filter(building => building.hasTR < 5 && building.hasTR > 0);
+    let filteredNodesLM = city.lunarModules.filter(building => building.hasTR < 5 && building.hasTR > 0);
+    // Fusionner les deux tableaux
+    let filteredNodes = [...filteredNodesLA, ...filteredNodesLM];
+    if (filteredNodes.length > 0) {
+        const distances = filteredNodes.map((building) => {
+            const distance = calculateLength(buildingID, building.id);
+            return { building, distance };
+        });
+
+        const closestBuilding = distances.reduce((closest, current) => {
+            return current.distance < closest.distance ? current : closest;
+        });
+
+        return closestBuilding.building;
+    } else {
+        return null;
+    }
+}
 let city = new City()
 const createdRoute = new Set()
 
@@ -307,7 +330,12 @@ while (true) {
             };
             // control if this unlinked LA found a 
             if(LA.hasTR === 0){
-                findClosestBuildingWithFreeLinks()
+                let availNode = findClosestBuildingWithFreeLinks(city, LA.id)
+                let canBuild = estimateCost(LA.id, availNode.id)
+                if(canBuild){
+                    constructTube(LA.id, availNode.id);
+                    city.updateNewTube(LA.id, availNode.id);
+                }
                 // case1 this module is LA add the arrivaltype to his object
                 // case2 this module is a LM , need to check if this module can be poded to a proper building type or if need to create a tube
             }
