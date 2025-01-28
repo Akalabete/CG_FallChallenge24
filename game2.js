@@ -268,6 +268,11 @@ function findClosestBuildingWithFreeLinks(city, buildingID) {
         return null;
     }
 }
+    // fn that find building by type of astronauts
+function findBuildingByType(city, type){
+    let answer = city.lunarModules.filter(building => building.type === type);
+    return answer;
+}
 let city = new City()
 const createdRoute = new Set()
 
@@ -306,7 +311,7 @@ while (true) {
                     // index = 0 => type 1
                     const type = LA.arrivingType[i]+1
                     // get an array of building of the same type
-                    let LMArray = findBuildingByType(type)
+                    let LMArray = findBuildingByType(city, type)
                     // a link should be created on those without existing links prior
                     if(LMArray.length > 0){
                         let priorityLM = LMArray.filter(building => building.hasTr = 0)
