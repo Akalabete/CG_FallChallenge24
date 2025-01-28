@@ -68,18 +68,29 @@ class City {
     updateBuildingsLists(buildingProps) {
         const idSeq = buildingProps.split(' ')
         if (idSeq[0] === "0") {
-            let arrivalByType = idSeq.slice(5);
+            let typeCounts = Array(20).fill(0);
+            let arrivalTypes = idSeq.slice(5);
+            arrivalTypes.forEach(type => {
+                type = parseInt(type);
+                    if (type >= 1 && type <= 20) {
+                        typeCounts[type - 1]++;
+                    }
+                });
+            
+
+            console.error(typeCounts);
             const landingArea = new LandingArea(
                                                  idSeq[1],
                                                  idSeq[2],
                                                  idSeq[3],
                                                  idSeq[4],
-                                                 arrivalByType,
+                                                 typeCounts,
                                                  0,
                                                  false
                                                 );
 
             this.landingAreas.push(landingArea)
+            
         } else {
             const lunarModule = new LunarModule(
                                                 idSeq[1],
@@ -235,7 +246,7 @@ function tubeConstruction( building1, building2) {
         return;
     }
 }
-  // fn that filter closest building with free TR
+  //  fn that filter closest building with free TR
   //  building and id it would also check if that building is linked to a
   //  prper building type
 function findClosestBuildingWithFreeLinks(city, buildingID) {
@@ -346,6 +357,6 @@ while (true) {
     if (action === ''){
         action === 'WAIT'
     }
-    console.log(actions);     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
+    console.log(action);     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
 
 }
