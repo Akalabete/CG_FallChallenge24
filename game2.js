@@ -78,7 +78,7 @@ class City {
                 });
             
 
-            console.error(typeCounts);
+            
             const landingArea = new LandingArea(
                                                  idSeq[1],
                                                  idSeq[2],
@@ -90,7 +90,6 @@ class City {
                                                 );
 
             this.landingAreas.push(landingArea)
-            
         } else {
             const lunarModule = new LunarModule(
                                                 idSeq[1],
@@ -142,7 +141,7 @@ class City {
 }
 
 class LandingArea {
-    constructor(id,type, x, y, monthlyArrivals, arrivingType, hasTR, isDesserved) {
+    constructor(id, x, y, monthlyArrivals, arrivingType, hasTR, isDesserved) {
         this.id = id;
         this.x = x;
         this.y = y;
@@ -298,14 +297,14 @@ while (true) {
         city.updateBuildingsLists(buildingProperties)
     }
     // seek unlinked LA and try to link them to their building type sorted by links and nodes chain links
-    let unlinkedLA = city.landingAreas.filter(building => building.hasTr === 0)
+    let unlinkedLA = city.landingAreas.filter(building => building.hasTR === 0)
     if (unlinkedLA.length >0) {
         unlinkedLA.forEach((LA) => {
             // extract arrival type and check if there are any, per types
-            for (let i = 0; i < LA.arrivalByType.length; i++){
-                if(LA.arrivalByType[i] > 0) {
+            for (let i = 0; i < LA.arrivingType.length; i++){
+                if(LA.arrivingType[i] > 0) {
                     // index = 0 => type 1
-                    const type = LA.arrivalByType[i]+1
+                    const type = LA.arrivingType[i]+1
                     // get an array of building of the same type
                     let LMArray = findBuildingByType(type)
                     // a link should be created on those without existing links prior
