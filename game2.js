@@ -383,89 +383,55 @@ while (true) {
         })
     }
     // step II creating pods
-    // create a list of undesserved buildings
-    
-    
-    //if (hasUndesserved.length > 0){
-        
-        // check what segments can be cumulated
-        
-        // check money for pod building
-      //  let canAffordPod = (city.resources - 500) > 0 ? true : false;
+    // Prio 1 no pod and low resources
+    // list all LA linked to LM of same type
+    let undesservedsLA = city.landingAreas.filter(building => building.isDesserved === false);
 
-        // compar
-        // regroup per type
-        // check if they have a tube 
-            // and if that tube is connected to the proper type
-            // if it does create a pod with id of the buildingdesserveds the number of stops is the amount total of incomers /10 * number of building desserved
-                // update the podList
-                // update the building objects 
-            // if not seek the way to connect to closest tube that has the correct stops
-        // at a point need to check if the routes need to be upgraded & a pod duplicated
-        // need to compare the upgrade + new pod cost vs interest of incomes.
-    //}
-    // Fonction pour vérifier si une route dessert tous les bâtiments non desservis
-function canCreateRouteForUndesserved(city, undesservedBuildings) {
-    let tubes = city.tubeList;
-    let undesservedIds = undesservedBuildings.map(building => building.id);
+    let tubeList = city.tubeList
+    function getTubesForUndesservedLA(undesservedsLA, tubeList) {
+        return undesservedsLA.map(la => {
+            let connectedTubes = tubeList.filter(tube => tube.building1 === la.id || tube.building2 === la.id);
+            return {
+                laId: la.id,
+                tubes: connectedTubes
+            };
+        });
+    }
+    // Utilisation de la fonction pour récupérer les tubes pour chaque LA non desservi
+let tubesForUndesservedLA = getTubesForUndesservedLA(undesservedsLA, tubeList);
 
-    // verify weither undeserved building have a tube or not
-    for (let i = 0; i < undesservedIds.length; i++) {
-        let buildingId = undesservedIds[i];
-        let isConnected = tubes.some(tube => tube.building1 === buildingId || tube.building2 === buildingId);
-        if (!isConnected) {
-            return false;
+// Afficher les détails complets des objets Tube
+// console.error(JSON.stringify(tubesForUndesservedLA, null, 2));
+
+// Exemple de traitement supplémentaire
+if (tubesForUndesservedLA.length > 0) {
+    // Travailler avec tubesForUndesservedLA comme un tableau
+    for (let i = 0; i < tubesForUndesservedLA.length; i++) {
+        let laId = tubesForUndesservedLA[i].laId;
+        let tubes = tubesForUndesservedLA[i].tubes;
+        if (tubes.length > 0) {
+            tubes.forEach((tube) => {
+                const startBuilding = city.findBuildingById(tube.building1);
+                const targetBuilding = city.findBuildingById(tube.building2);
+                const targetBuildingType = targetBuilding.type;
+                const numberOfTraveler = startBuilding.arrivalTypes[targetBuildingType - 1];
+                const loopNeededToPurgePop = Math.ceil(numberOfTraveler / (tube.capacity * 10));
+                let loop = "";
+                for (let j = 0; j < loopNeededToPurgePop; j++) {
+                    loop += `${tube.building1} ${tube.building2} `;
+                }
+
+                action += `POD ${tube.building1} ${loop.trim()} `;
+            });
         }
     }
-    return true;
-}
-// fn that generate pod stops
-function generatePodStops(chain) {
-    let stops = [];
-    for (let i = 0; i < chain.length - 1; i++) {
-        stops.push(chain[i]);
-        stops.push(chain[i + 1]);
-        stops.push(chain[i]);
-    }
-    stops.push(chain[chain.length - 1]);
-    return stops;
-}
-// fn that create  a pod
-function createPod(city, undesservedBuildings, action) {
-    let podId = city.podList.length + 1;
-    let stops = generatePodStops(undesservedBuildings.map(building => building.id));
-    let travel = stops.join(' ');
-
-    action += `POD ${podId} ${travel};`;
-
-    // updt desserved building list
-    undesservedBuildings.forEach(building => {
-        building.isDesserved = true;
-    });
-
-    // add pod to list
-    city.podList.push(new Pod(podId, stops, travel.split(' ')));
-
-    return action;
+} else {
+    console.error("Aucun tube trouvé pour les LA non desservis.");
 }
 
-// try to push a pod in 
-let hasUndesserved = findUndesservedModules(city);
-
-if (hasUndesserved.length > 0) {
-    let canAffordPod = (city.resources - 500) > 0 ? true : false;
-
-    if (canAffordPod && canCreateRouteForUndesserved(city, hasUndesserved)) {
-        action = createPod(city, hasUndesserved, action);
-        city.resources -= 500; // cost of a pod
-    }
+if (action === "") {
+    action = "WAIT";
 }
-    if(action === ""){
-        action = "WAIT"
-    }
-    // Write an action using console.log()
-    // To debug: console.error('Debug messages...');
-    
-    console.log(action);     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
-    
-}
+
+// ROI .... tbd cost&return vs interest 
+console.log(action);
