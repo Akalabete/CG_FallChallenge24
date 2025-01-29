@@ -199,7 +199,7 @@ function calculateLength(city, building1ID, building2ID) {
 
     // fn that calcultate the cost of a tube
 function calculateTubeCost(distance, capacity) {
-    return distance * capacity * 0.1
+    return distance * capacity * 10
 }
     // fn that take 2  segment and verify its not crossing one other
 function segmentsIntersect(segment1, segment2) {
@@ -329,6 +329,7 @@ while (true) {
                                 action = tubeConstruction(LA.id, priorityLM[0].id, action);
                                 city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, priorityLM[0].id, 1);
+                                console.error("---" + buildingCost + '--' + city.resources)
                             }else {
                                 return
                             }
@@ -344,7 +345,7 @@ while (true) {
                                 return current.distance < closest.distance ? current : closest;
                                 });
                             let buildingCost = calculateTubeCost(LA.id, closestBuilding.id)
-                            if((city.resources-buildinCost) > 0){
+                            if((city.resources-buildingCost) > 0){
                                 action = tubeConstruction(LA.id, closestBuilding.id, action);
                                 city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, closestBuilding.id, 1);
@@ -411,18 +412,29 @@ if (tubesForUndesservedLA.length > 0) {
         let tubes = tubesForUndesservedLA[i].tubes;
         if (tubes.length > 0) {
             tubes.forEach((tube) => {
-                const startBuilding = city.findBuildingById(tube.building1);
-                const targetBuilding = city.findBuildingById(tube.building2);
-                const targetBuildingType = targetBuilding.type;
-                console.error(targetBuildingType)
-                const numberOfTraveler = startBuilding.arrivingType[targetBuildingType - 1];
-                const loopNeededToPurgePop = Math.ceil(numberOfTraveler / (tube.capacity * 10));
-                let loop = "";
-                for (let j = -1; j < loopNeededToPurgePop; j++) {
-                    loop += `${tube.building1} ${tube.building2} `;
+                
+                if(city.resources > 500) {
+                    const startBuilding = city.findBuildingById(tube.building1);
+                    const targetBuilding = city.findBuildingById(tube.building2);
+                    const targetBuildingType = targetBuilding.type;
+                    const numberOfTraveler = startBuilding.arrivingType[targetBuildingType - 1];
+                    const loopNeededToPurgePop = Math.ceil(numberOfTraveler / (tube.capacity * 10));
+                    let loop = "";
+                    for (let j = -1; j < loopNeededToPurgePop; j++) {
+                        loop += `${tube.building1} ${tube.building2} `;
+                    }
+    
+                    action += `POD ${tube.building1}${tube.building2} ${loop.trim()} ;`;
+                    // and it updates the podlist and the desserved arguments in the councerned buildings.
+                    city.updatePodList(`${tube.building1}${tube.building2} ${loop.trim().split(' ').length} ${loop.trim()}`);
+                    targetBuilding.isDesserved = true;
+                    // need to change LA desserved arguments to add desservedByType....tbc
+                    startBuilding.isDesserved = true; 
+                    city.resources -= 500;
+                } else  {
+                    console.error('not this turn')
                 }
-
-                action += `POD ${tube.building1}${tube.building2} ${loop.trim()} ;`;
+                
             });
         }
     }
