@@ -414,14 +414,15 @@ if (tubesForUndesservedLA.length > 0) {
                 const startBuilding = city.findBuildingById(tube.building1);
                 const targetBuilding = city.findBuildingById(tube.building2);
                 const targetBuildingType = targetBuilding.type;
-                const numberOfTraveler = startBuilding.arrivalTypes[targetBuildingType - 1];
+                console.error(targetBuildingType)
+                const numberOfTraveler = startBuilding.arrivingType[targetBuildingType - 1];
                 const loopNeededToPurgePop = Math.ceil(numberOfTraveler / (tube.capacity * 10));
                 let loop = "";
-                for (let j = 0; j < loopNeededToPurgePop; j++) {
+                for (let j = -1; j < loopNeededToPurgePop; j++) {
                     loop += `${tube.building1} ${tube.building2} `;
                 }
 
-                action += `POD ${tube.building1} ${loop.trim()} `;
+                action += `POD ${tube.building1}${tube.building2} ${loop.trim()} ;`;
             });
         }
     }
@@ -435,3 +436,4 @@ if (action === "") {
 
 // ROI .... tbd cost&return vs interest 
 console.log(action);
+}
