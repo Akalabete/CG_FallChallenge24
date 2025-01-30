@@ -68,12 +68,13 @@ class City {
     updateBuildingsLists(buildingProps) {
         const idSeq = buildingProps.split(' ')
         if (idSeq[0] === "0") {
-            let typeCounts = Array(20).fill(0);
+            let typeCounts = Array(20).fill(0).map(() => [0, true]);
             let arrivalTypes = idSeq.slice(5);
             arrivalTypes.forEach(type => {
                 type = parseInt(type);
                     if (type >= 1 && type <= 20) {
-                        typeCounts[type - 1]++;
+                        typeCounts[type - 1][0]++;
+                        typeCounts[type - 1][1]=false;
                     }
                 });
             const landingArea = new LandingArea(
@@ -326,7 +327,7 @@ while (true) {
                         if(priorityLM.length > 0){
                             let buildingCost = calculateTubeCost(calculateLength(city, LA.id, priorityLM[0].id), 1);
                             console.error(LA.id,priorityLM[0].id)
-                            if((resources-buildingCost)>0){
+                            if((resources-buildingCost)>1000){
                                 action = tubeConstruction(LA.id, priorityLM[0].id, action);
                                 city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, priorityLM[0].id, 1);
@@ -345,8 +346,8 @@ while (true) {
                             const closestBuilding = distances.reduce((closest, current) => {
                                 return current.distance < closest.distance ? current : closest;
                                 });
-                            let buildingCost = calculateTubeCost(calculateLength(city, LA.id, closestBuilding.id))
-                            if((city.resources-buildingCost) > 0){
+                            let buildingCost = calculateTubeCost(closest.distance, 1)
+                            if((city.resources-buildingCost) > 1000){
                                 action = tubeConstruction(LA.id, closestBuilding.id, action);
                                 city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, closestBuilding.id, 1);
@@ -412,31 +413,31 @@ if (tubesForUndesservedLA.length > 0) {
         let laId = tubesForUndesservedLA[i].laId;
         let tubes = tubesForUndesservedLA[i].tubes;
         if (tubes.length > 0) {
-            tubes.forEach((tube) => {
-                
-                if(city.resources >= 1000) {
+            let allPodsCanBeBuilt = (city.resources >= tubes.lenght* 1000) ? true : false;
+            if ( allPodsCanBeBuilt) {
+                tubes.forEach((tube) => {
                     const startBuilding = city.findBuildingById(tube.building1);
                     const targetBuilding = city.findBuildingById(tube.building2);
                     const targetBuildingType = targetBuilding.type;
                     const numberOfTraveler = startBuilding.arrivingType[targetBuildingType - 1];
                     const loopNeededToPurgePop = Math.ceil(numberOfTraveler / (tube.capacity * 10));
                     let loop = "";
-                    for (let j = -1; j < loopNeededToPurgePop; j++) {
+                    for (let j = 0; j < loopNeededToPurgePop; j++) {
                         loop += `${tube.building1} ${tube.building2} `;
                     }
-    
+                    city.resources -= 1000;
                     action += `POD ${tube.building1}${tube.building2} ${loop.trim()} ;`;
                     // and it updates the podlist and the desserved arguments in the councerned buildings.
                     city.updatePodList(`${tube.building1}${tube.building2} ${loop.trim().split(' ').length} ${loop.trim()}`);
                     targetBuilding.isDesserved = true;
                     // need to change LA desserved arguments to add desservedByType....tbc
-                    startBuilding.isDesserved = true; 
-                    city.resources -= 1000;
-                } else  {
-                    console.error('not this turn')
-                }
-                
-            });
+                    startBuilding.isDesserved = true;   
+                });  
+            } else if(!allPodsCanBeBuilt && city.resources >= 1000) {
+               // get the LA with the most connected LM 
+               // create a pod with a loop doing all the connection
+               // upd the objects
+            }
         }
     }
 } else {
