@@ -186,7 +186,7 @@ function calculateLength(city, building1ID, building2ID) {
 
     if (!building1 || !building2) {
         console.error(`Building not found: ${!building1 ? building1ID : ''} ${!building2 ? building2ID : ''}`);
-        return 0; // ou une autre valeur par défaut appropriée
+        return 0; 
     }
 
     const x1 = parseFloat(building1.x);
@@ -324,7 +324,8 @@ while (true) {
                         let priorityLM = LMArray.filter(building => building.hasTR === 0)
                         let haveModuleToConnect = LMArray.filter(building => building.hasTR >1 && building.hasTR <5)
                         if(priorityLM.length > 0){
-                            buildingCost = calculateTubeCost(LA.id, priorityLM[0].id);
+                            let buildingCost = calculateTubeCost(calculateLength(city, LA.id, priorityLM[0].id), 1);
+                            console.error(LA.id,priorityLM[0].id)
                             if((resources-buildingCost)>0){
                                 action = tubeConstruction(LA.id, priorityLM[0].id, action);
                                 city.resources = city.resources-buildingCost
@@ -344,7 +345,7 @@ while (true) {
                             const closestBuilding = distances.reduce((closest, current) => {
                                 return current.distance < closest.distance ? current : closest;
                                 });
-                            let buildingCost = calculateTubeCost(LA.id, closestBuilding.id)
+                            let buildingCost = calculateTubeCost(calculateLength(city, LA.id, closestBuilding.id))
                             if((city.resources-buildingCost) > 0){
                                 action = tubeConstruction(LA.id, closestBuilding.id, action);
                                 city.resources = city.resources-buildingCost
@@ -413,7 +414,7 @@ if (tubesForUndesservedLA.length > 0) {
         if (tubes.length > 0) {
             tubes.forEach((tube) => {
                 
-                if(city.resources > 500) {
+                if(city.resources >= 1000) {
                     const startBuilding = city.findBuildingById(tube.building1);
                     const targetBuilding = city.findBuildingById(tube.building2);
                     const targetBuildingType = targetBuilding.type;
@@ -430,7 +431,7 @@ if (tubesForUndesservedLA.length > 0) {
                     targetBuilding.isDesserved = true;
                     // need to change LA desserved arguments to add desservedByType....tbc
                     startBuilding.isDesserved = true; 
-                    city.resources -= 500;
+                    city.resources -= 1000;
                 } else  {
                     console.error('not this turn')
                 }
