@@ -83,8 +83,7 @@ class City {
                                                  idSeq[3],
                                                  idSeq[4],
                                                  typeCounts,
-                                                 0,
-                                                 false
+                                                 0
                                                 );
 
             this.landingAreas.push(landingArea)
@@ -139,14 +138,13 @@ class City {
 }
 
 class LandingArea {
-    constructor(id, x, y, monthlyArrivals, arrivingType, hasTR, isDesserved) {
+    constructor(id, x, y, monthlyArrivals, arrivingType, hasTR) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.monthlyArrivals = monthlyArrivals;
         this.arrivingType = arrivingType
         this.hasTR = hasTR;
-        this.isDesserved = isDesserved;
     }
 }
 class LunarModule {
@@ -315,7 +313,7 @@ while (true) {
         unlinkedLA.forEach((LA) => {
             // extract arrival type and check if there are any, per types
             for (let i = 0; i < LA.arrivingType.length; i++){
-                if(LA.arrivingType[i] > 0) {
+                if(LA.arrivingType[i][0] > 0) {
                     // index = 0 => type 1
                     const type = i + 1;
                     // get an array of building of the same type
@@ -388,14 +386,25 @@ while (true) {
     // step II creating pods
     // Prio 1 no pod and low resources
     // list all LA linked to LM of same type
-    let undesservedsLA = city.landingAreas.filter(building => building.isDesserved === false);
-
+    // Fonction pour trouver les types non desservis pour chaque LandingArea
+    function findUndesservedTypes(landingArea) {
+        return landingArea.arrivingType
+            .map((typeCount, index) => typeCount[1] === false ? index + 1 : null)
+            .filter(type => type !== null);
+    }
+    let undesservedsLA = city.landingAreas
+    .map(la => {
+        let undesservedTypes = findUndesservedTypes(la);
+        return undesservedTypes.length > 0 ? { laId: la.id, types: undesservedTypes } : null;
+    })
+    .filter(la => la !== null);
     let tubeList = city.tubeList
     function getTubesForUndesservedLA(undesservedsLA, tubeList) {
         return undesservedsLA.map(la => {
-            let connectedTubes = tubeList.filter(tube => tube.building1 === la.id || tube.building2 === la.id);
+            let connectedTubes = tubeList.filter(tube => tube.building1 === la.laId || tube.building2 === la.laId);
             return {
-                laId: la.id,
+                laId: la.laId,
+                types: la.types,
                 tubes: connectedTubes
             };
         });
@@ -403,6 +412,7 @@ while (true) {
     // Utilisation de la fonction pour récupérer les tubes pour chaque LA non desservi
 let tubesForUndesservedLA = getTubesForUndesservedLA(undesservedsLA, tubeList);
 
+console.error(JSON.stringify(tubesForUndesservedLA, null, 2));
 // Afficher les détails complets des objets Tube
 // console.error(JSON.stringify(tubesForUndesservedLA, null, 2));
 
