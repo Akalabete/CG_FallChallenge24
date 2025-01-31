@@ -83,6 +83,24 @@ class Pod {
     }
 }
 
+// FUNCTIONS DEFINITION
+    // Filter either landingAreas OR lunarModules
+        // return an ARRAY Of Objects { id : number, unhandledTypes: [[type, number],...]}
+    function filterUnhandledAstronauts(list) {
+        let filteredList = [];
+        list.forEach((building) => {
+            // Filtrer les types non traités et inclure le nombre d'astronautes non traités
+            let filteredTypes = building.arrivalTypes
+                .map((typeCount, index) => typeCount[1] === false ? [index + 1, typeCount[0]] : null)
+                .filter(type => type !== null);
+            
+            // Si des types non traités sont trouvés, ajouter à la liste filtrée
+            if (filteredTypes.length > 0) {
+                filteredList.push({ id: building.id, unhandledTypes: filteredTypes });
+            }
+        });
+        return filteredList;
+    }
 let city = new City();
 //********
 while (true) {
@@ -106,22 +124,7 @@ while (true) {
 
     // Write an action using console.log()
     // To debug: console.error('Debug messages...');
-    function filter(list){
-        let filteredList = [];
-        list.forEach((building) => {
-            // Filtrer les types non traités
-            let filteredTypes = building.arrivalTypes
-                .map((typeCount, index) => typeCount[1] === false ? index + 1 : null)
-                .filter(type => type !== null);
-            
-            // Si des types non traités sont trouvés, ajouter à la liste filtrée
-            if (filteredTypes.length > 0) {
-                filteredList.push({ id: building.id, unhandledTypes: filteredTypes });
-            }
-        });
-        return filteredList;
-    }
-    console.error(filter(city.landingAreas))
+    console.error(filterUnhandledAstronauts(city.landingAreas))
     console.log('TUBE 0 1;TUBE 0 2;POD 42 0 1 0 2 0 1 0 2');     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
     
 }
