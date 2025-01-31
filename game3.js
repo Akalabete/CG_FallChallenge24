@@ -45,24 +45,24 @@ class City {
     }
 }
 class LandingArea {
-    constructor(id, x, y, monthlyArrivals, arrivingType, linkedTo) {
+    constructor(id, x, y, monthlyArrivals, arrivalTypes, linkedTo) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.monthlyArrivals = monthlyArrivals;
-        this.arrivingType = arrivingType
+        this.arrivalTypes = arrivalTypes
         this.linkedTo = linkedTo;
     }
 }
 class LunarModule {
-    constructor(id, type, x, y, linkedTo, hasTP, arrivingType) {
+    constructor(id, type, x, y, linkedTo, hasTP, arrivalTypes) {
         this.id = id;
         this.type = type;
         this.x = x;
         this.y = y;
         this.linkedTo = linkedTo;
         this.hasTP = hasTP;
-        this.arrivingType = arrivingType;
+        this.arrivalTypes = arrivalTypes;
     }
 }
 class Tube {
@@ -83,6 +83,8 @@ class Pod {
     }
 }
 
+let city = new City();
+//********
 while (true) {
     const resources = parseInt(readline());
     const numTravelRoutes = parseInt(readline());
@@ -99,11 +101,27 @@ while (true) {
     const numNewBuildings = parseInt(readline());
     for (let i = 0; i < numNewBuildings; i++) {
         const buildingProperties = readline();
+        city.updateBuildingsLists(buildingProperties)
     }
 
     // Write an action using console.log()
     // To debug: console.error('Debug messages...');
-
+    function filter(list){
+        let filteredList = [];
+        list.forEach((building) => {
+            // Filtrer les types non traités
+            let filteredTypes = building.arrivalTypes
+                .map((typeCount, index) => typeCount[1] === false ? index + 1 : null)
+                .filter(type => type !== null);
+            
+            // Si des types non traités sont trouvés, ajouter à la liste filtrée
+            if (filteredTypes.length > 0) {
+                filteredList.push({ id: building.id, unhandledTypes: filteredTypes });
+            }
+        });
+        return filteredList;
+    }
+    console.error(filter(city.landingAreas))
     console.log('TUBE 0 1;TUBE 0 2;POD 42 0 1 0 2 0 1 0 2');     // TUBE | UPGRADE | TELEPORT | POD | DESTROY | WAIT
-
+    
 }
