@@ -324,12 +324,10 @@ while (true) {
                         let haveModuleToConnect = LMArray.filter(building => building.hasTR >1 && building.hasTR <5)
                         if(priorityLM.length > 0){
                             let buildingCost = calculateTubeCost(calculateLength(city, LA.id, priorityLM[0].id), 1);
-                            console.error(LA.id,priorityLM[0].id)
                             if((resources-buildingCost)>1000){
                                 action = tubeConstruction(LA.id, priorityLM[0].id, action);
                                 city.resources = city.resources-buildingCost
                                 city.updateNewTube(LA.id, priorityLM[0].id, 1);
-                                console.error("---" + buildingCost + '--' + city.resources)
                             }else {
                                 return
                             }
@@ -412,7 +410,6 @@ while (true) {
     // Utilisation de la fonction pour récupérer les tubes pour chaque LA non desservi
 let tubesForUndesservedLA = getTubesForUndesservedLA(undesservedsLA, tubeList);
 
-console.error(JSON.stringify(tubesForUndesservedLA, null, 2));
 // Afficher les détails complets des objets Tube
 // console.error(JSON.stringify(tubesForUndesservedLA, null, 2));
 
@@ -429,7 +426,7 @@ if (tubesForUndesservedLA.length > 0) {
                     const startBuilding = city.findBuildingById(tube.building1);
                     const targetBuilding = city.findBuildingById(tube.building2);
                     const targetBuildingType = targetBuilding.type;
-                    const numberOfTraveler = startBuilding.arrivingType[targetBuildingType - 1];
+                    const numberOfTraveler = startBuilding.arrivingType[targetBuildingType - 1][0];
                     const loopNeededToPurgePop = Math.ceil(numberOfTraveler / (tube.capacity * 10));
                     let loop = "";
                     for (let j = 0; j < loopNeededToPurgePop; j++) {
@@ -445,8 +442,42 @@ if (tubesForUndesservedLA.length > 0) {
                 });  
             } else if(!allPodsCanBeBuilt && city.resources >= 1000) {
                // get the LA with the most connected LM 
-               // create a pod with a loop doing all the connection
-               // upd the objects
+               
+               let longestChainLA = tubesForUndesservedLA.reduce((longest, la) => {
+                    return (la.tubes.length > longest.tubes.length) ? la : longest;
+                }, { laId: null, types: [], tubes: [] });
+                // create a pod with a loop doing all the connection
+                while(city.resources >= 1000  && longestChainLA) {
+                    const tubes = longestChainLA.tubes;
+                    const startBuilding = city.findBuildingById(longestChainLA.laId);
+                    let podId = `${longestChainLA.laId}`;
+                    let podLoop = "";
+                    let movingTravelerTypes = [];
+                    let totalTravelersToMove = 0;
+                    let lowestTubeCapacity = 5;
+                     //define Pod ID
+                    tubes.forEach((tube) => {
+                        podId += `${tube.building2}`
+                        podLoop += `${tube.building1} ${tube.building2} `
+                        let targetBuilding = city.findBuildingById(tube.building2)
+                        movingTravelerTypes.push(targetBuilding.type);
+                        if(tube.capacity <= lowestTubeCapacity) {
+                            lowestTubeCapacity = tube.capacity
+                        }
+                    })
+                    movingTravelerTypes.forEach((travelerType) => {
+                        totalTravelersToMove += startBuilding.arrivingType[travelerType-1][0]
+                    })
+                    console.error(podLoop)
+                    const loopNeededToPurgePop = Math.ceil(totalTravelersToMove / (lowestTubeCapacity * 10));
+                    for(let i = 0; i < loopNeededToPurgePop; i++){
+                        podLoop += podLoop
+                    }
+                    // generate the pod
+                    action += `POD ${podId} ${podLoop.trim()};`
+                    city.resources -= 1000;
+                    // update desserveds 
+                }
             }
         }
     }
