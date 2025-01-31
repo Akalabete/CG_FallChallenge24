@@ -295,7 +295,7 @@ while (true) {
         const buildingId1 = parseInt(inputs[0]);
         const buildingId2 = parseInt(inputs[1]);
         const capacity = parseInt(inputs[2]);
-        city.updateNewTube(buildingId1, buildingId2, capacity)
+        // city.updateNewTube(buildingId1, buildingId2, capacity)
         
     }
     const numPods = parseInt(readline());
@@ -328,10 +328,10 @@ while (true) {
                         let priorityLM = LMArray.filter(building => building.hasTR === 0)
                         let haveModuleToConnect = LMArray.filter(building => building.hasTR >1 && building.hasTR <5)
                         if(priorityLM.length > 0){
-                            let buildingCost = calculateTubeCost(calculateLength(city, LA.id, priorityLM[0].id), 1);
-                            if((resources-buildingCost)>1000){
+                            let tubeCost = calculateTubeCost(calculateLength(city, LA.id, priorityLM[0].id), 1);
+                            if((resources-tubeCost)>1000){
                                 action = tubeConstruction(LA.id, priorityLM[0].id, action);
-                                city.resources = city.resources-buildingCost
+                                city.resources = city.resources-tubeCost
                                 city.updateNewTube(LA.id, priorityLM[0].id, 1);
                             }else {
                                 return
@@ -426,7 +426,9 @@ if (tubesForUndesservedLA.length > 0) {
         let tubes = tubesForUndesservedLA[i].tubes;
         if (tubes.length > 0) {
             let allPodsCanBeBuilt = (city.resources >= tubes.lenght* 1000) ? true : false;
+            
             if ( allPodsCanBeBuilt) {
+                
                 tubes.forEach((tube) => {
                     const startBuilding = city.findBuildingById(tube.building1);
                     const targetBuilding = city.findBuildingById(tube.building2);
@@ -438,7 +440,9 @@ if (tubesForUndesservedLA.length > 0) {
                         loop += `${tube.building1} ${tube.building2} `;
                     }
                     city.resources -= 1000;
-                    action += `POD ${tube.building1}${tube.building2} ${loop.trim()} ;`;
+                    let podId = podAmount;
+                    podAmount ++;
+                    action += `POD ${podId} ${loop.trim()};`;
                     // and it updates the podlist and the desserved arguments in the councerned buildings.
                     city.updatePodList(`${tube.building1}${tube.building2} ${loop.trim().split(' ').length} ${loop.trim()}`);
                     targetBuilding.isDesserved = true;
@@ -447,7 +451,7 @@ if (tubesForUndesservedLA.length > 0) {
                 });  
             } else if(!allPodsCanBeBuilt && city.resources >= 1000) {
                // get the LA with the most connected LM 
-               
+               console.error('triggered')
                let longestChainLA = tubesForUndesservedLA.reduce((longest, la) => {
                     return (la.tubes.length > longest.tubes.length) ? la : longest;
                 }, { laId: null, types: [], tubes: [] });
@@ -461,7 +465,6 @@ if (tubesForUndesservedLA.length > 0) {
                     let movingTravelerTypes = [];
                     let totalTravelersToMove = 0;
                     let lowestTubeCapacity = 5;
-                    
                      //define Pod ID
                     tubes.forEach((tube) => {
                         podLoop += `${tube.building1} ${tube.building2} `
@@ -478,8 +481,9 @@ if (tubesForUndesservedLA.length > 0) {
                         totalTravelersToMove += startBuilding.arrivingType[travelerType-1][0]
                     })
                     
-                    const loopNeededToPurgePop = Math.ceil(totalTravelersToMove / (lowestTubeCapacity * 10));
-                    for(let i = 0; i < loopNeededToPurgePop; i++){
+                    const loopNeededToPurgePop = Math.ceil(totalTravelersToMove/ movingTravelerTypes.length / (lowestTubeCapacity * 10));
+                    
+                    for(let i = 1; i < loopNeededToPurgePop; i++){
                         if(i<5){
                             podLoop += podLoop
                         }
