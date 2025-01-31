@@ -280,8 +280,11 @@ let city = new City();
 const createdRoutes = new Set();
 let podAmount = 0;
 let turnAmount = 0;
-
+const startTime = performance.now();
+const timeLimit = 1000;
 while (true) {
+    const startTime = performance.now();
+    const timeLimit = 1000;
     turnAmount += 1;
     let action = '';
     const resources = parseInt(readline());
@@ -307,6 +310,8 @@ while (true) {
         const buildingProperties = readline();
         city.updateBuildingsLists(buildingProperties)
     }
+    const endTime = performance.now();
+    console.error(`Execution Time: ${endTime - startTime}ms`)
     // seek unlinked LA and try to link them to their building type sorted by links and nodes chain links
     let unlinkedLA = city.landingAreas.filter(building => building.hasTR === 0)
     if (unlinkedLA.length >0) {
@@ -474,7 +479,6 @@ if (tubesForUndesservedLA.length > 0) {
                     })
                     
                     const loopNeededToPurgePop = Math.ceil(totalTravelersToMove / (lowestTubeCapacity * 10));
-                    console.error(loopNeededToPurgePop)
                     for(let i = 0; i < loopNeededToPurgePop; i++){
                         if(i<5){
                             podLoop += podLoop
