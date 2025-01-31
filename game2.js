@@ -438,7 +438,7 @@ if (tubesForUndesservedLA.length > 0) {
                     city.updatePodList(`${tube.building1}${tube.building2} ${loop.trim().split(' ').length} ${loop.trim()}`);
                     targetBuilding.isDesserved = true;
                     // need to change LA desserved arguments to add desservedByType....tbc
-                    startBuilding.isDesserved = true;   
+                    startBuilding.arrivingType[targetBuildingType-1][1] = true;   
                 });  
             } else if(!allPodsCanBeBuilt && city.resources >= 1000) {
                // get the LA with the most connected LM 
@@ -450,28 +450,36 @@ if (tubesForUndesservedLA.length > 0) {
                 while(city.resources >= 1000  && longestChainLA) {
                     const tubes = longestChainLA.tubes;
                     const startBuilding = city.findBuildingById(longestChainLA.laId);
-                    let podId = `${longestChainLA.laId}`;
+                    let podId = podAmount;
+                    podAmount ++;
                     let podLoop = "";
                     let movingTravelerTypes = [];
                     let totalTravelersToMove = 0;
                     let lowestTubeCapacity = 5;
+                    
                      //define Pod ID
                     tubes.forEach((tube) => {
-                        podId += `${tube.building2}`
                         podLoop += `${tube.building1} ${tube.building2} `
                         let targetBuilding = city.findBuildingById(tube.building2)
                         movingTravelerTypes.push(targetBuilding.type);
                         if(tube.capacity <= lowestTubeCapacity) {
                             lowestTubeCapacity = tube.capacity
                         }
+                        // modify the property of desserved while we have access to these data in the range
+                        targetBuilding.isDesserved = true;
+                        startBuilding.arrivingType[targetBuilding.type-1][1] = true;
                     })
                     movingTravelerTypes.forEach((travelerType) => {
                         totalTravelersToMove += startBuilding.arrivingType[travelerType-1][0]
                     })
-                    console.error(podLoop)
+                    
                     const loopNeededToPurgePop = Math.ceil(totalTravelersToMove / (lowestTubeCapacity * 10));
+                    console.error(loopNeededToPurgePop)
                     for(let i = 0; i < loopNeededToPurgePop; i++){
-                        podLoop += podLoop
+                        if(i<5){
+                            podLoop += podLoop
+                        }
+                        
                     }
                     // generate the pod
                     action += `POD ${podId} ${podLoop.trim()};`
