@@ -122,6 +122,7 @@ const city = new City();
 let turnAmount = 0;
 let podAmount = 0;
 let upgradablePods = [];
+let unprocessedRoutes = new Map();
 while (true) {
     turnAmount += 1;
     const resources = parseInt(readline());
@@ -235,9 +236,14 @@ while (true) {
                     groupedRoutes.get(landingId).push(route);
                 });
                 // create généric pod with the same LA 
-                let unprocessedRoutes = new Map();
-                while (remainingResources >= 1000 && groupedRoutes.size > 0){
-                    groupedRoutes.forEach((routes, landingId) => {
+                
+                while (remainingResources >= 1000 && groupedRoutes.size > 0) {
+                    // Convertir Map en Array pour pouvoir trier
+                    let sortedGroups = Array.from(groupedRoutes.entries())
+                        .sort((a, b) => b[1].length - a[1].length); // Tri par nombre de routes décroissant
+                    
+                    // Traiter les groupes triés
+                    for (let [landingId, routes] of sortedGroups) {
                         if (remainingResources >= 1000) {
                             let podPath = "";
                             routes.forEach(route => {
@@ -249,34 +255,63 @@ while (true) {
                             upgradablePods.push(`${podAmount} ${podPath}`);
                             podAmount++;
                             remainingResources -= 1000;
+                            
+                            // Retirer le groupe traité
+                            groupedRoutes.delete(landingId);
                         } else {
                             // Sauvegarder les routes non traitées
                             unprocessedRoutes.set(landingId, routes);
                         }
-                    });
-
-                    // Mise à jour de groupedRoutes avec uniquement les routes non traitées
-                    groupedRoutes = unprocessedRoutes;
-                    unprocessedRoutes = new Map();
-                
-                    // Debug des routes non traitées
-                    console.error('Routes non traitées:', groupedRoutes);
+                    }
+                    
+                    console.error('Routes non traitées:', unprocessedRoutes);
                     break;
                 }
-                //let podPath ="";
-                //for (let i = 0; i<undeservedsLA.length; i++){
-                //    podPath += `${undeservedsLA[i][0]} ${undeservedsLA[i][1]} `;
-                //}
-                // to loop 
-                //podPath += `${undeservedsLA[0][0]}`;
-                // create the pod
-                //actions.push(`POD ${podAmount} ${podPath.trim()}`)
-                //upgradablePods.push(`${podAmount} ${podPath}`)
-                //podAmount++
             }
         }
     } else {
-        if(unprocessedRoutes.length > 0){
+        //console.error("turn2" , unprocessedRoutes)
+        const landingAreas = city.getLandingAreas();
+        const lunarModules = city.getLunarModules();
+        let newRoutes = [];
+
+        // Vérifier les nouvelles connexions possibles
+        landingAreas.forEach(landing => {
+            landing.arrivalAmountByTypes.forEach((typeCount, index) => {
+                if (typeCount[1] > 0) {
+                    const moduleType = index + 1;
+                    const matchingModules = lunarModules
+                        .filter(m => m.type === moduleType)
+                        .sort((a, b) => 
+                            city.calculateDistance(landing, a) - 
+                            city.calculateDistance(landing, b)
+                        );
+
+                    matchingModules.forEach(module => {
+                        // Vérifier si le tube n'existe pas déjà
+                        if (!landing.linkedTo.includes(module.id) && 
+                            city.canCreateTube(landing, module, existingTubes)) {
+                            const tubeCost = Math.floor(city.calculateDistance(landing, module) * 10);
+                            if (remainingResources - tubeCost >= RESERVE_POD) {
+                                actions.push(`TUBE ${landing.id} ${module.id}`);
+                                existingTubes.push([landing, module]);
+                                remainingResources -= tubeCost;
+                                newRoutes.push([landing.id, module.id, typeCount[1]]);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        // Mise à jour des bâtiments avec les nouvelles connexions
+        city.buildings.forEach(building => {
+            building.updateLinkedTo(travelRoutes);
+        });
+
+        if (remainingResources >= 1000 && unprocessedRoutes.size > 0) {
+            console.error('Processing unprocessed routes from turn 1:', unprocessedRoutes);
+            
             unprocessedRoutes.forEach((routes, landingId) => {
                 if (remainingResources >= 1000) {
                     let podPath = "";
@@ -289,7 +324,9 @@ while (true) {
                     upgradablePods.push(`${podAmount} ${podPath}`);
                     podAmount++;
                     remainingResources -= 1000;
-                    unprocessedRotues.delete(landingId);
+                    
+                    // Supprimer les routes traitées
+                    unprocessedRoutes.delete(landingId);
                 }
             });
         }
